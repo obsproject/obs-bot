@@ -130,3 +130,6 @@ dmypy.json
 
 # PyCharm
 .idea/
+
+# ignore private cogs
+obsbot/cogs/private/
