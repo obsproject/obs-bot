@@ -17,6 +17,13 @@ class Factoids(Cog):
         self.factoids = dict()
         self.config = config
 
+        # These variables will get replaced if they are found in factoid messages.
+        # New variables can be added at runtime, but aren't saved currently.
+        self.variables = {
+            '%nightly_url%': self.bot.state.get('win_build_url', 'https://obsproject.com/4oh4'),
+            '%mac_nightly_url%': self.bot.state.get('mac_build_url', 'https://obsproject.com/4oh4')
+        }
+
         if admin := self.bot.get_cog('Admin'):
             admin.add_help_section('Factoids', [
                 ('.add <name> <message>', 'Add new factoid'),
@@ -59,15 +66,25 @@ class Factoids(Cog):
                                                                required=False)],
                                                  auto_convert=dict(mention='user'))
 
+    def set_variable(self, variable, value):
+        self.variables[variable] = value
+
+    def resolve_variables(self, factoid_message):
+        for variable, value in self.variables.items():
+            factoid_message = factoid_message.replace(variable, value)
+        return factoid_message
+
     async def slash_factoid(self, ctx: SlashContext, user_mention=None):
         logger.info(f'Command: {ctx.name} ({ctx.command_id}) was called')
         await self.increment_uses(ctx.name)
+        message = self.resolve_variables(self.factoids[ctx.name]['message'])
+
         if user_mention:
             if not user_mention.startswith('<@'):
                 user_mention = ''
-            return await ctx.send(send_type=3, content=f'{user_mention} {self.factoids[ctx.name]["message"]}')
+            return await ctx.send(send_type=3, content=f'{user_mention} {message}')
         else:
-            return await ctx.send(send_type=3, content=self.factoids[ctx.name]['message'], hidden=True)
+            return await ctx.send(send_type=3, content=message, hidden=True)
 
     @Cog.listener()
     async def on_message(self, msg: Message):
@@ -83,9 +100,10 @@ class Factoids(Cog):
             else:  # factoid does not exit
                 return
 
+        logger.info(f'Factoid "{factoid_name}" requested by "{msg.author.name}"')
         factoid = self.factoids[factoid_name]
         await self.increment_uses(factoid_name)
-        logger.info(f'Factoid "{factoid_name}" requested by "{msg.author.name}"')
+        message = self.resolve_variables(factoid['message'])
 
         # default reference is the message by the requesting user,
         # but if user was replying to somebody, use that instead
@@ -102,9 +120,9 @@ class Factoids(Cog):
             if factoid['image_embed']:
                 # image embeds do not have a message, instead the "message" is the image's URL
                 embed = Embed(colour=self._factoids_colour)
-                embed.set_image(url=factoid['message'].strip())
+                embed.set_image(url=message.strip())
             else:
-                embed = Embed(colour=self._factoids_colour, description=factoid['message'])
+                embed = Embed(colour=self._factoids_colour, description=message)
 
             if user_mention:
                 return await msg.channel.send(user_mention, embed=embed)
@@ -112,9 +130,9 @@ class Factoids(Cog):
                 return await msg.channel.send(embed=embed, reference=ref, mention_author=True)
         else:
             if user_mention:
-                return await msg.channel.send(f'{user_mention} {factoid["message"]}')
+                return await msg.channel.send(f'{user_mention} {message}')
             else:
-                return await msg.channel.send(factoid['message'], reference=ref, mention_author=True)
+                return await msg.channel.send(message, reference=ref, mention_author=True)
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(
