@@ -74,15 +74,14 @@ class Factoids(Cog):
             factoid_message = factoid_message.replace(variable, value)
         return factoid_message
 
-    async def slash_factoid(self, ctx: SlashContext, user_mention=None):
+    async def slash_factoid(self, ctx: SlashContext, mentioned_user: User = None):
+        # this is preliminary until we have a decision on whether or not to actually use slash commands.
         logger.info(f'Command: {ctx.name} ({ctx.command_id}) was called')
         await self.increment_uses(ctx.name)
         message = self.resolve_variables(self.factoids[ctx.name]['message'])
 
-        if user_mention:
-            if not user_mention.startswith('<@'):
-                user_mention = ''
-            return await ctx.send(send_type=3, content=f'{user_mention} {message}')
+        if mentioned_user:
+            return await ctx.send(send_type=3, content=f'{mentioned_user.mention} {message}')
         else:
             return await ctx.send(send_type=3, content=message, hidden=True)
 
