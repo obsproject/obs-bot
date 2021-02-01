@@ -27,7 +27,11 @@ class Admin(Cog):
 
         embed = Embed(title='OBS Bot Help')
         for section, commands in self.help_sections.items():
-            embed.add_field(name=section, value='\n'.join(f'{cmd} - {helptext}' for cmd, helptext in commands),
+            longest = max(len(cmd) for cmd, _ in commands)
+            content = '\n'.join(f'{cmd}{" " * (longest - len(cmd) + 1)}- {helptext}'
+                                for cmd, helptext in commands)
+            embed.add_field(name=section,
+                            value=f'```{content}```',
                             inline=False)
         return await ctx.channel.send(embed=embed)
 
