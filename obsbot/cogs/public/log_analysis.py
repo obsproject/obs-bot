@@ -145,7 +145,7 @@ class LogAnalyser(Cog):
                     embed.description = f'*Log contains debug messages (browser/ftl/etc), ' \
                                         f'for a filtered version [click here]({clean_url})*\n'
 
-                return await msg.channel.send(embed=embed, reference=msg.reference, mention_author=True)
+                return await msg.channel.send(embed=embed, reference=msg, mention_author=True)
 
     async def fetch_log_analysis(self, url):
         async with self.bot.session.get('https://obsproject.com/analyzer-api/',
@@ -338,10 +338,10 @@ class LogAnalyser(Cog):
         for record in res:
             if record['gpu_id']:
                 self.hardware_stats['gpu'][record['gpu_id']] = dict(name=record['name'],
-                                                                    counts=record['counts'])
+                                                                    count=record['counts'])
             elif record['cpu_id']:
                 self.hardware_stats['cpu'][record['cpu_id']] = dict(name=record['name'],
-                                                                    counts=record['counts'])
+                                                                    count=record['counts'])
 
     @command()
     async def togglehwcheck(self, ctx: Context):
