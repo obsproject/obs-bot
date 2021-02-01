@@ -33,7 +33,7 @@ class DBHelper:
 
     async def exec_multi(self, command, arglist, **kwargs) -> Union[List[asyncpg.Record], None]:
         logger.debug(f'Sending DB multi-execute "{command}" with {len(arglist)} inputs')
-        return await self.conn.executemulti(command, arglist, **kwargs)
+        return await self.conn.executemany(command, arglist, **kwargs)
 
     async def add_task(self, query, *args, **kwargs) -> asyncio.Task:
         """Create task that will execute async, can be optionally awaited by caller"""
