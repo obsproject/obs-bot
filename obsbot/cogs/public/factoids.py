@@ -57,9 +57,11 @@ class Factoids(Cog):
             for alias in record['aliases']:
                 self.alias_map[alias] = name
 
-            # todo only add slash commands for top 10 factoids and also remove them on update if necessary
-            if name not in self.bot.slash.commands:
-                self.bot.slash.add_slash_command(self.slash_factoid, name=name, description=f'{name} factoid',
+        for factoid in sorted(self.factoids.values(), key=lambda a: a['uses'], reverse=True)[:10]:
+            # todo remove old ones if necessary
+            if factoid['name'] not in self.bot.slash.commands:
+                self.bot.slash.add_slash_command(self.slash_factoid, name=factoid['name'],
+                                                 description=f'{factoid["name"]} factoid',
                                                  guild_ids=[self.bot.config['bot']['main_guild']],
                                                  options=[dict(type=6, name='mention',
                                                                description='User(s) to mention',
