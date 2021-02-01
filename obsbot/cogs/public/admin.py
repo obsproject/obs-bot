@@ -59,7 +59,17 @@ class Admin(Cog):
 
         if cron := self.bot.get_cog('Cron'):
             embed.add_field(name='Cron module', inline=False,
-                            value=f'Last Fider ID: N/A\n')
+                            value=f'Last Fider ID: {self.bot.state["fider_last_id"]}\n'
+                                  f'Last Twitter ID: {self.bot.state["twitter_last_id"]}')
+
+        if lag := self.bot.get_cog('LogAnalyser'):
+            bench_cpus = len(lag.benchmark_data["cpus"])
+            bench_gpus = len(lag.benchmark_data["gpus"])
+            stats_cpus = len(lag.hardware_stats["cpu"])
+            stats_gpus = len(lag.hardware_stats["gpu"])
+            embed.add_field(name='Log Analyser module', inline=False,
+                            value=(f'Benchmark DB: {bench_cpus} CPUs, {bench_gpus} GPUs\n'
+                                   f'Hardware Stats: {stats_cpus} CPUs, {stats_gpus} GPUs'))
 
         return await ctx.channel.send(embed=embed)
 
