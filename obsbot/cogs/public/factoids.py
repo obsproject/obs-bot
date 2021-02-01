@@ -322,22 +322,19 @@ class Factoids(Cog):
     @command()
     async def top(self, ctx: Context):
         embed = Embed(title='Top Factoids')
-        description = ['Num - Factoid (uses)', '--------------------------------']
-        pos = 10
-        for fac in sorted(self.factoids.values(), key=lambda a: a['uses'], reverse=True)[:10]:
+        description = ['Pos - Factoid (uses)', '--------------------------------']
+        for pos, fac in enumerate(sorted(self.factoids.values(), key=lambda a: a['uses'],
+                                         reverse=True)[:10], start=1):
             description.append(f'{pos:2d}. - {fac["name"]} ({fac["uses"]})')
-            pos -= 1
         embed.description = '```{}```'.format('\n'.join(description))
         return await ctx.send(embed=embed)
 
     @command()
     async def bottom(self, ctx: Context):
         embed = Embed(title='Least used Factoids')
-        description = ['Num - Factoid (uses)', '--------------------------------']
-        pos = 10
-        for fac in sorted(self.factoids.values(), key=lambda a: a['uses'])[:10]:
+        description = ['Pos - Factoid (uses)', '--------------------------------']
+        for pos, fac in enumerate(sorted(self.factoids.values(), key=lambda a: a['uses'])[:10], start=1):
             description.append(f'{pos:2d}. - {fac["name"]} ({fac["uses"]})')
-            pos -= 1
         embed.description = '```{}```'.format('\n'.join(description))
         return await ctx.send(embed=embed)
 
