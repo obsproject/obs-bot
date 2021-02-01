@@ -35,6 +35,9 @@ class Factoids(Cog):
                 ('.setembed <name> [y/n]', 'Set/toggle embed status'),
                 ('.setimgurl <name> [url]', 'set image url (empty to clear)'),
                 ('.info <name>', 'Print factoid info'),
+                ('.top', 'Print most used commands'),
+                ('.bottom', 'Print least used commands'),
+                ('.unused', 'Print unused commands'),
             ])
 
     async def fetch_factoids(self, refresh=False):
@@ -314,6 +317,39 @@ class Factoids(Cog):
             embed.add_field(name='Aliases', value=', '.join(factoid['aliases']))
         embed.add_field(name='Uses (since 2018-06-07)', value=str(factoid['uses']))
         embed.add_field(name='Uses embed', value=str(factoid['embed'] or factoid['image_embed']))
+        return await ctx.send(embed=embed)
+
+    @command()
+    async def top(self, ctx: Context):
+        embed = Embed(title='Top Factoids')
+        description = ['Num - Factoid (uses)', '--------------------------------']
+        pos = 10
+        for fac in sorted(self.factoids.values(), key=lambda a: a['uses'], reverse=True)[:10]:
+            description.append(f'{pos:2d}. - {fac["name"]} ({fac["uses"]})')
+            pos -= 1
+        embed.description = '```{}```'.format('\n'.join(description))
+        return await ctx.send(embed=embed)
+
+    @command()
+    async def bottom(self, ctx: Context):
+        embed = Embed(title='Least used Factoids')
+        description = ['Num - Factoid (uses)', '--------------------------------']
+        pos = 10
+        for fac in sorted(self.factoids.values(), key=lambda a: a['uses'])[:10]:
+            description.append(f'{pos:2d}. - {fac["name"]} ({fac["uses"]})')
+            pos -= 1
+        embed.description = '```{}```'.format('\n'.join(description))
+        return await ctx.send(embed=embed)
+
+    @command()
+    async def unused(self, ctx: Context):
+        embed = Embed(title='Unused Factoids')
+        description = []
+        for fac in sorted(self.factoids.values(), key=lambda a: a['uses']):
+            if fac['uses'] > 0:
+                break
+            description.append(f'- {fac["name"]}')
+        embed.description = '```{}```'.format('\n'.join(description))
         return await ctx.send(embed=embed)
 
 
