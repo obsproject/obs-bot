@@ -41,7 +41,7 @@ class LogAnalyser(Cog):
 
         if admin := self.bot.get_cog('Admin'):
             admin.add_help_section('Log Analyser', [
-                ('.togglehwcheck', 'Add new factoid'),
+                ('.togglehwcheck', 'Enable/Disable hardware check'),
                 ('.tophardware', 'List most commonly seen CPUs and GPUs'),
             ])
 
@@ -133,7 +133,7 @@ class LogAnalyser(Cog):
                 hw_results = await self.match_hardware(log_content)
                 if self.bot.state.get('hw_check_enabled', False):
                     if hardware_check_msg := self.hardware_check(hw_results):
-                        embed.add_field(name='Hardware Check (Beta)', inline=False,
+                        embed.add_field(name='Hardware Check', inline=False,
                                         value=' / '.join(hardware_check_msg))
 
                 embed.add_field(name='Analyzer Report', inline=False,
