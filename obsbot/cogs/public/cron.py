@@ -42,7 +42,6 @@ class Cron(commands.Cog):
 
     @tasks.loop(minutes=5.0)
     async def fider(self):
-        logger.info('Running fider cronjob')
         items = []
         async with self.bot.session.get('https://ideas.obsproject.com/api/v1/posts?view=recent') as r:
             if r.status == 200:
@@ -86,13 +85,11 @@ class Cron(commands.Cog):
         if not self.bot.state.get('fider_last_id'):
             self.bot.state['fider_last_id'] = self.config['fider']['default_last_id']
         cid = self.config['fider']['channel_id']
-        logger.info('Getting fider channel')
         self.fider_channel = await self.bot.fetch_channel(cid)
-        logger.info(f'fider channel: {str(self.fider_channel)}')
+        logger.info(f'Found fider channel: {str(self.fider_channel)}')
 
     @tasks.loop(minutes=5.0)
     async def twitter(self):
-        logger.info('Running twitter cronjob')
         _user_id = self.config['twitter']['account_id']
         _user_name = self.config['twitter']['screen_name']
         
@@ -119,9 +116,8 @@ class Cron(commands.Cog):
         if not self.bot.state.get('twitter_last_id'):
             self.bot.state['twitter_last_id'] = self.config['twitter']['default_last_id']
         cid = self.config['twitter']['channel_id']
-        logger.info('Getting twitter channel')
         self.twitter_channel = await self.bot.fetch_channel(cid)
-        logger.info(f'Twitter channel: {str(self.twitter_channel)}')
+        logger.info(f'Found twitter channel: {str(self.twitter_channel)}')
 
 
 def setup(bot):
