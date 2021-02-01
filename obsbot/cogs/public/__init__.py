@@ -3,6 +3,6 @@ cogs = [
     'admin',
     'factoids',
     'cron',
-    # 'log_analysis',
+    'log_analysis',
     # 'webhooks'
 ]
