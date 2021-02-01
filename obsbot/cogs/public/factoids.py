@@ -89,7 +89,10 @@ class Factoids(Cog):
 
     @Cog.listener()
     async def on_message(self, msg: Message):
-        if not msg.content.startswith('!'):
+        # ignore our own messages
+        if msg.author == self.bot.user:
+            return
+        if not msg.content or msg.content[0] != '!':
             return
         msg_parts = msg.content[1:].split()
 
