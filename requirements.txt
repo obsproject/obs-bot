@@ -2,3 +2,4 @@ asyncpg>=0.21.0
 discord.py>=1.6.0
 toml>=0.10.2
 discord-py-slash-command<1.1.0
+peony-twitter>=1.1.7
