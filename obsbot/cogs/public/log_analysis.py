@@ -42,6 +42,7 @@ class LogAnalyser(Cog):
         if admin := self.bot.get_cog('Admin'):
             admin.add_help_section('Log Analyser', [
                 ('.togglehwcheck', 'Add new factoid'),
+                ('.tophardware', 'List most commonly seen CPUs and GPUs'),
             ])
 
     @Cog.listener()
@@ -350,6 +351,24 @@ class LogAnalyser(Cog):
         self.bot.state['hw_check_enabled'] = not self.bot.state['hw_check_enabled']
         _state = 'enabled' if self.bot.state['hw_check_enabled'] else 'disabled'
         return await ctx.send(f'Analysis hardware check is now {_state}')
+
+    @command()
+    async def tophardware(self, ctx: Context):
+        embed = Embed(title='Top Hardware')
+
+        cpus = []
+        for pos, cpu in enumerate(sorted(self.hardware_stats['cpu'].values(),
+                                         key=lambda a: a['count'], reverse=True)[:10], start=1):
+            cpus.append(f'{pos:2d}. - {cpu["name"]} ({cpu["count"]})')
+        embed.add_field(name='CPUs', value='```{}```'.format('\n'.join(cpus)), inline=False)
+
+        gpus = []
+        for pos, gpu in enumerate(sorted(self.hardware_stats['gpu'].values(),
+                                         key=lambda a: a['count'], reverse=True)[:10], start=1):
+            gpus.append(f'{pos:2d}. - {gpu["name"]} ({gpu["count"]})')
+        embed.add_field(name='GPUs', value='```{}```'.format('\n'.join(gpus)), inline=False)
+
+        return await ctx.send(embed=embed)
 
 
 def setup(bot):
