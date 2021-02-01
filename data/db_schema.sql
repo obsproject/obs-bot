@@ -1,11 +1,11 @@
 CREATE TABLE "factoids"
 (
     id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name text NOT NULL,
+    "name" text NOT NULL,
     aliases text[] DEFAULT '{}',
-    message text NOT NULL,
+    "message" text NOT NULL,
+    image_url text,
     embed BOOL DEFAULT false,
-    image_embed BOOL DEFAULT false,
     uses integer DEFAULT 0
 );
 

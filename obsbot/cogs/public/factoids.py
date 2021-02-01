@@ -28,12 +28,12 @@ class Factoids(Cog):
             admin.add_help_section('Factoids', [
                 ('.add <name> <message>', 'Add new factoid'),
                 ('.del <name>', 'Delete factoid'),
-                ('.mod <name> <new message>', 'Modify existing factoid'),
+                ('.mod <name> <new message>', 'Modify existing factoid ("" to clear)'),
                 ('.ren <name> <new name>', 'Rename existing factoid or alias'),
                 ('.addalias <alias> <name>', 'Add alias to factoid'),
                 ('.delalias <alias>', 'Rename existing factoid'),
                 ('.setembed <name> [y/n]', 'Set/toggle embed status'),
-                ('.setimageembed <name> [y/n]', 'Set/toggle image embed status'),
+                ('.setimgurl <name> [url]', 'set image url (empty to clear)'),
                 ('.info <name>', 'Print factoid info'),
             ])
 
@@ -52,7 +52,7 @@ class Factoids(Cog):
         for record in rows:
             name = record['name']
             factoid = dict(name=name, uses=record['uses'], embed=record['embed'], message=record['message'],
-                           image_embed=record['image_embed'], aliases=record['aliases'])
+                           image_url=record['image_url'], aliases=record['aliases'])
             self.factoids[name] = factoid
             for alias in record['aliases']:
                 self.alias_map[alias] = name
@@ -115,23 +115,19 @@ class Factoids(Cog):
         if msg.mentions:
             user_mention = ' '.join(user.mention for user in msg.mentions)
 
+        embed = None
         if factoid['embed']:
-            if factoid['image_embed']:
-                # image embeds do not have a message, instead the "message" is the image's URL
-                embed = Embed(colour=self._factoids_colour)
-                embed.set_image(url=message.strip())
-            else:
-                embed = Embed(colour=self._factoids_colour, description=message)
+            embed = Embed(colour=self._factoids_colour, description=message)
+            message = ''
+            if factoid['image_url']:
+                embed.set_image(url=factoid['image_url'])
 
-            if user_mention:
-                return await msg.channel.send(user_mention, embed=embed)
-            else:
-                return await msg.channel.send(embed=embed, reference=ref, mention_author=True)
+        if user_mention and embed:
+            return await msg.channel.send(user_mention, embed=embed)
+        elif user_mention:
+            return await msg.channel.send(f'{user_mention} {message}')
         else:
-            if user_mention:
-                return await msg.channel.send(f'{user_mention} {message}')
-            else:
-                return await msg.channel.send(message, reference=ref, mention_author=True)
+            return await msg.channel.send(message, embed=embed, reference=ref, mention_author=True)
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(
@@ -160,6 +156,10 @@ class Factoids(Cog):
         _name = name if name in self.factoids else self.alias_map.get(name)
         if not _name or _name not in self.factoids:
             return await ctx.send(f'The specified name ("{name}") does not exist!')
+
+        # allow clearing message of embeds
+        if self.factoids[_name]['embed'] and message == '""':
+            message = ''
 
         await self.bot.db.exec(
             f'''UPDATE "{self.config["db_table"]}" SET message=$2 WHERE name=$1''',
@@ -277,27 +277,24 @@ class Factoids(Cog):
         return await ctx.send(f'Embed mode for "{name}" set to {str(embed_status).lower()}')
 
     @command()
-    async def setimageembed(self, ctx: Context, name: str.lower, yesno: bool = None):
+    async def setimgurl(self, ctx: Context, name: str.lower, url: str = None):
         if not self.bot.is_admin(ctx.author):
             return
         _name = name if name in self.factoids else self.alias_map.get(name)
         if not _name or _name not in self.factoids:
             return await ctx.send(f'The specified factoid ("{name}") does not exist!')
 
-        embed_status = self.factoids[_name]['image_embed']
-
-        if yesno is None:
-            embed_status = not embed_status
-        else:
-            embed_status = yesno
+        factoid = self.factoids[_name]
+        if not factoid['embed']:
+            return await ctx.send(f'The specified factoid ("{name}") is not en embed!')
 
         await self.bot.db.exec(
-            f'''UPDATE "{self.config["db_table"]}" SET image_embed=$2 WHERE name=$1''',
-            _name, embed_status
+            f'''UPDATE "{self.config["db_table"]}" SET image_url=$2 WHERE name=$1''',
+            _name, url
         )
 
         await self.fetch_factoids(refresh=True)
-        return await ctx.send(f'Embed mode for "{name}" set to {str(embed_status).lower()}')
+        return await ctx.send(f'Image URL for "{name}" set to {url}')
 
     @command()
     async def info(self, ctx: Context, name: str.lower):
