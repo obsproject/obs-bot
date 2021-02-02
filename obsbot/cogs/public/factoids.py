@@ -117,15 +117,18 @@ class Factoids(Cog):
         ref = msg
         if msg.reference:
             ref = msg.reference
+            # attempt to delete the message requesting the factoid (delay swallows errors)
+            await msg.delete(delay=0.0)
 
-        # if users are mentioned, mention them in the bot reply as well
+        # if users are mentioned (but it's not a reply), mention them in the bot reply as well
         user_mention = ''
-        if msg.mentions:
+        if msg.mentions and not ref:
             user_mention = ' '.join(user.mention for user in msg.mentions)
 
         embed = None
         if factoid['embed']:
             embed = Embed(colour=self._factoids_colour, description=message)
+            embed.set_footer(text=f'Factoid requested by {str(msg.author)}')
             message = ''
             if factoid['image_url']:
                 embed.set_image(url=factoid['image_url'])
