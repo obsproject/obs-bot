@@ -248,7 +248,7 @@ class LogAnalyser(Cog):
                             best_match = (s, cpu_bench)
 
                     if best_match[1] is None:
-                        logger.warning('Could not find CPU in CPU DB (update required?):', cpu)
+                        logger.warning(f'Could not find CPU in CPU DB (update required?): {cpu}')
                     else:
                         # Filter out false positives by having a minimum threshold.
                         # Experimentation shows that different values for Intel/AMD work best
@@ -258,7 +258,7 @@ class LogAnalyser(Cog):
                                 min_match = 5
 
                         if best_match[0] < min_match:
-                            logger.warning('Could not find acceptable match (update required?):', cpu)
+                            logger.warning(f'Could not find acceptable match (update required?): {cpu}')
                         else:
                             res['cpu_bench'] = best_match[1]
 
@@ -287,12 +287,12 @@ class LogAnalyser(Cog):
                             best_match = (s, gpu_bench)
 
                     if best_match[1] is None:
-                        logger.warning('Could not find GPU in GPU DB (update required?):', gpu)
+                        logger.warning(f'Could not find GPU in GPU DB (update required?): {gpu}')
                     else:
                         # vendor match quality is about the same, but some GPU names are too short
                         min_match = 2 if len(gpu_parts) <= 4 else 3
                         if best_match[0] < min_match:
-                            logger.warning('Could not find acceptable match (update required?):', gpu)
+                            logger.warning('Could not find acceptable match (update required?): {gpu}')
                         else:
                             res['gpu_bench'] = best_match[1]
 
