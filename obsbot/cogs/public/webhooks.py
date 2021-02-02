@@ -37,11 +37,11 @@ class Webhooks(Cog):
         logging.getLogger('aiohttp.access').setLevel(logging.WARNING)
         # wait for bot to be ready, then start and find the channels
         await self.bot.wait_until_ready()
-        self.commits_channel = await self.bot.fetch_channel(self.config['github']['commits_channel'])
-        self.brief_channel = await self.bot.fetch_channel(self.config['github']['brief_commits_channel'])
+        self.commits_channel = self.bot.get_channel(self.config['github']['commits_channel'])
+        self.brief_channel = self.bot.get_channel(self.config['github']['brief_commits_channel'])
         self.ci_channels = []
         for cid in self.config['ci_channels']:
-            self.ci_channels.append(await self.bot.fetch_channel(cid))
+            self.ci_channels.append(self.bot.get_channel(cid))
 
         await self.server.start()
 
@@ -125,7 +125,7 @@ class Webhooks(Cog):
 
         for record in records:
             try:
-                chan = await self.bot.fetch_channel(record['channel_id'])
+                chan = self.bot.get_channel(record['channel_id'])
                 msg = await chan.fetch_message(record['message_id'])
                 embed = msg.embeds[0]
             except Exception as e:

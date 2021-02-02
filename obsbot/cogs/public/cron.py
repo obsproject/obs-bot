@@ -85,7 +85,7 @@ class Cron(commands.Cog):
         if not self.bot.state.get('fider_last_id'):
             self.bot.state['fider_last_id'] = self.config['fider']['default_last_id']
         cid = self.config['fider']['channel_id']
-        self.fider_channel = await self.bot.fetch_channel(cid)
+        self.fider_channel = self.bot.get_channel(cid)
         logger.info(f'Found fider channel: {str(self.fider_channel)}')
 
     @tasks.loop(minutes=5.0)
@@ -116,7 +116,7 @@ class Cron(commands.Cog):
         if not self.bot.state.get('twitter_last_id'):
             self.bot.state['twitter_last_id'] = self.config['twitter']['default_last_id']
         cid = self.config['twitter']['channel_id']
-        self.twitter_channel = await self.bot.fetch_channel(cid)
+        self.twitter_channel = self.bot.get_channel(cid)
         logger.info(f'Found twitter channel: {str(self.twitter_channel)}')
 
 
