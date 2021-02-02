@@ -128,7 +128,7 @@ class GitHubHelper:
             logger.error('Getting GitHub workflow runs failed.')
             return None
 
-        for run in runs:
+        for run in runs['workflow_runs']:
             if run['check_suite_id'] == check_suite_id:
                 break
         else:
