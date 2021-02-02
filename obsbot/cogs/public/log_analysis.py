@@ -154,7 +154,7 @@ class LogAnalyser(Cog):
                         embed.add_field(name='Hardware Check', inline=False,
                                         value=' / '.join(hardware_check_msg))
 
-                embed.add_field(name='Analyzer Report', inline=False,
+                embed.add_field(name='Analyser Report', inline=False,
                                 value=f'[**Click here for solutions / full analysis**]({anal_url})')
 
                 # include filtered log in case SE or FTL spam is detected
