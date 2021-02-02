@@ -100,11 +100,15 @@ class Webhooks(Cog):
                 if not result:
                     logger.error('Getting GitHub CI result failed.')
                     return web.Response(text='OK but not really')
-                embed, update_info = result
+                build_success, embed, update_info = result
                 self.bot.loop.create_task(self.add_ci_info_to_messages(*update_info))
 
-                for chan in self.ci_channels:
-                    await chan.send(embed=embed)
+                # only post build result if build failed or status changed (e.g. success->failed)
+                if not build_success or (self.bot.state.get('ci_last_result', False) != build_success):
+                    for chan in self.ci_channels:
+                        await chan.send(embed=embed)
+
+                self.bot.state['ci_last_result'] = build_success
         else:
             logger.debug(f'Unhandled github event: {event}')
 
