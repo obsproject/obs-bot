@@ -252,18 +252,19 @@ class LogAnalyser(Cog):
                     else:
                         # Filter out false positives by having a minimum threshold.
                         # Experimentation shows that different values for Intel/AMD work best
-                        min_match = 3 \
-                            if 'Intel' not in best_match[1]['name'] or len(cpu_parts) < 4 \
-                            else 5
+                        min_match = 3
+                        if 'Intel' in best_match[1]['name'] and len(cpu_parts) >= 5:
+                            if not any(sku in cpu for sku in ('Atom', 'Celeron', 'Xeon', 'Pentium')):
+                                min_match = 5
 
                         if best_match[0] < min_match:
                             logger.warning('Could not find acceptable match (update required?):', cpu)
                         else:
                             res['cpu_bench'] = best_match[1]
 
-                    # only save CPU stats when we're using DX11 on Windows
-                    if 'Loading up D3D11' in log_content and res['cpu_bench']:
-                        self.bot.loop.create_task(self.update_hardware_stats(cpu_bench=res['cpu_bench']))
+                        # only save CPU stats when we're using DX11 on Windows
+                        if 'Loading up D3D11' in log_content and res['cpu_bench']:
+                            self.bot.loop.create_task(self.update_hardware_stats(cpu_bench=res['cpu_bench']))
 
                 if 'Loading up D3D11' in line or 'Loading up OpenGL' in line:
                     if 'NSMACHOperatingSystem' in log_content:  # macOS
@@ -287,17 +288,17 @@ class LogAnalyser(Cog):
 
                     if best_match[1] is None:
                         logger.warning('Could not find GPU in GPU DB (update required?):', gpu)
-
-                    # vendor match quality is about the same, but some GPU names are too short
-                    min_match = 2 if len(gpu_parts) < 4 else 3
-                    if best_match[0] < min_match:
-                        logger.warning('Could not find acceptable match (update required?):', gpu)
                     else:
-                        res['gpu_bench'] = best_match[1]
+                        # vendor match quality is about the same, but some GPU names are too short
+                        min_match = 2 if len(gpu_parts) <= 4 else 3
+                        if best_match[0] < min_match:
+                            logger.warning('Could not find acceptable match (update required?):', gpu)
+                        else:
+                            res['gpu_bench'] = best_match[1]
 
-                    # only save GPU info when we're running DX11
-                    if 'D3D11' in line and res['gpu_bench']:
-                        self.bot.loop.create_task(self.update_hardware_stats(gpu_bench=res['gpu_bench']))
+                        # only save GPU info when we're running DX11
+                        if 'D3D11' in line and res['gpu_bench']:
+                            self.bot.loop.create_task(self.update_hardware_stats(gpu_bench=res['gpu_bench']))
 
         return res
 
