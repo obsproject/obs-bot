@@ -1,0 +1,62 @@
+[bot]
+token = "<bot token>"
+state_file = "../obsbot_state.json"
+main_guild = 12345678909876654321
+owner = 12345678909876654321
+admins = [
+	12345678909876654321
+]
+
+[db]
+host = "localhost"
+port = 5432
+user = "<user>"
+pass = "<pw>"
+
+[webhooks]
+enabled = true
+port = 8000
+ci_channels = [12345678909876654321, 12345678909876654321]
+
+[webhooks.github]
+commits_channel = 12345678909876654321
+brief_commits_channel = 12345678909876654321
+db_table = "commit_messages"
+github_api_auth = "token <token>"
+commit_truncation_limit = 2
+workflow_id = 123456
+
+[webhooks.github.emotes]
+passed = "github_success:12345678909876654321"
+failed = "github_failed:12345678909876654321"
+partial = "github_partial_failure:12345678909876654321"
+
+[cron]
+enabled = true
+interval = 300
+
+[cron.fider]
+default_last_id = 1337
+channel_id = 12345678909876654321
+
+[cron.twitter]
+account_id = 123456
+screen_name = "MyAccount"
+channel_id = 12345678909876654321
+default_last_id = 12345678909876654321
+
+[cron.twitter.credentials]
+consumer_key = "<key>"
+consumer_secret = "<secret>"
+access_token = "<key>"
+access_token_secret = "<secret>"
+
+[factoids]
+enabled = true
+db_table = "factoids"
+
+[log_analyser]
+enabled = true
+hw_check_enabled = true
+db_table = "hardware_stats"
+channel_blacklist = [12345678909876654321]
