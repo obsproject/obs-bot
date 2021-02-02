@@ -2,8 +2,9 @@ import logging
 
 from discord import Message, Embed, User
 from discord.ext.commands import Cog, command, Context
-
 from discord_slash import SlashContext
+
+from .utils.ratelimit import RateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ class Factoids(Cog):
         self.alias_map = dict()
         self.factoids = dict()
         self.config = config
+        self.limiter = RateLimiter(self.config.get('cooldown', 20.0))
 
         # The variables map to state variables, can be added at runtime
         self.variables = {
@@ -119,7 +121,11 @@ class Factoids(Cog):
             else:  # factoid does not exit
                 return
 
-        logger.info(f'Factoid "{factoid_name}" requested by "{msg.author.name}"')
+        if self.limiter.is_limited(factoid_name, msg.channel.id):
+            logger.debug(f'{str(msg.author)} attempted to request command but was rate-limited.')
+            return
+
+        logger.info(f'Factoid "{factoid_name}" requested by "{str(msg.author)}"')
         factoid = self.factoids[factoid_name]
         await self.increment_uses(factoid_name)
         message = self.resolve_variables(factoid['message'])

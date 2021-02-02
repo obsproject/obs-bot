@@ -8,6 +8,8 @@ from aiohttp import ClientResponseError
 from discord import Message, Embed, Colour
 from discord.ext.commands import Cog, command, Context
 
+from .utils.ratelimit import RateLimiter
+
 logger = logging.getLogger(__name__)
 
 _increment_query = '''UPDATE "{}" SET counts=counts+1 WHERE gpu_id=$1 AND cpu_id=$2'''
@@ -24,6 +26,7 @@ class LogAnalyser(Cog):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
+        self.limiter = RateLimiter(self.config.get('cooldown', 20.0))
 
         # this gets filled from the DB when the bot loads the cog
         self.hardware_stats = dict(cpu=dict(), gpu=dict())
@@ -57,25 +60,40 @@ class LogAnalyser(Cog):
         log_candidates = []
         # message attachments
         for attachment in msg.attachments:
-            if attachment.url.endswith('.log'):
-                log_candidates.append((attachment.url, attachment.url))
+            if attachment.url.endswith('.txt'):
+                # collisions are possible here, but unlikely, we'll see if it becomes a problem
+                if not self.limiter.is_limited(attachment.filename):
+                    log_candidates.append((attachment.url, attachment.url))
+                else:
+                    logger.debug(f'{str(msg.author)} attempted to upload a rate-limited log.')
+
         # links in message
         for part in [p.strip() for p in msg.content.split()]:
             if any(part.startswith(lh) for lh in self._log_hosts):
                 if 'obsproject.com' in part:
-                    log_candidates.append((part, part))
+                    raw_url = html_url = part
                 elif 'hastebin.com' in part:
                     hastebin_id = part.rsplit('/', 1)[1]
                     if not hastebin_id:
                         continue
-                    log_candidates.append((f'https://hastebin.com/raw/{hastebin_id}',
-                                           f'https://hastebin.com/{hastebin_id}'))
+                    raw_url = f'https://hastebin.com/raw/{hastebin_id}'
+                    html_url = f'https://hastebin.com/{hastebin_id}'
                 elif 'pastebin.com' in part:
                     pastebin_id = part.rsplit('/', 1)[1]
                     if not pastebin_id:
                         continue
-                    log_candidates.append((f'https://pastebin.com/raw/{pastebin_id}',
-                                           f'https://pastebin.com/{pastebin_id}'))
+                    raw_url = f'https://pastebin.com/raw/{pastebin_id}'
+                    html_url = f'https://pastebin.com/{pastebin_id}'
+                else:
+                    continue
+
+                if not self.limiter.is_limited(raw_url):
+                    log_candidates.append((raw_url, html_url))
+                else:
+                    logger.debug(f'{str(msg.author)} attempted to post a rate-limited log.')
+
+        if not log_candidates:
+            return
 
         if len(log_candidates) > 3:
             logger.warning('There are too many possible log URLs, cutting down to 3...')
