@@ -45,6 +45,9 @@ class OBSBot(commands.Bot):
         # set by on_ready
         self.start_time = None
         self.main_guild = None
+        # admin ids, set via config, but can be changed at runtime
+        self.admins = set(self.config['bot']['admins'])
+        self.admins.add(self.config['bot']['owner'])
 
     async def on_ready(self):
         logger.info('OBS Bot ready!')
@@ -61,13 +64,9 @@ class OBSBot(commands.Bot):
         await self.change_presence(activity=activity)
 
     def is_admin(self, user: discord.Member):
-        # todo do check via role rather than user ids
-        if user.id == self.config['bot']['owner']:
+        if user.id in self.admins:
             return True
-        elif user.id in self.config['bot']['admins']:
-            return True
-        else:
-            return False
+        return False
 
     async def on_command_error(self, context, exception):
         """Swallow somwe errors we don't care about"""
