@@ -137,8 +137,8 @@ class GitHubHelper:
 
         # get some useful metadata from run information
         commit_hash = run['head_sha']
-        finished = dateutil.parser.parse(run['created_at'])
-        started = dateutil.parser.parse(run['startTime'])
+        finished = dateutil.parser.parse(run['updated_at'])
+        started = dateutil.parser.parse(run['created_at'])
         delta = (finished - started).seconds
         seconds = delta % 60
         minutes = delta // 60
