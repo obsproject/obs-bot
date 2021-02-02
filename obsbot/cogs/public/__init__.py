@@ -4,5 +4,5 @@ cogs = [
     'factoids',
     'cron',
     'log_analysis',
-    # 'webhooks'
+    'webhooks'
 ]
