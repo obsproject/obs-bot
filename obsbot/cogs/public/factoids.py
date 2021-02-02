@@ -17,12 +17,14 @@ class Factoids(Cog):
         self.factoids = dict()
         self.config = config
 
-        # These variables will get replaced if they are found in factoid messages.
-        # New variables can be added at runtime, but aren't saved currently.
+        # The variables map to state variables, can be added at runtime
         self.variables = {
-            '%nightly_url%': self.bot.state.get('win_build_url', 'https://obsproject.com/4oh4'),
-            '%mac_nightly_url%': self.bot.state.get('mac_build_url', 'https://obsproject.com/4oh4')
+            '%nightly_url%': 'nightly_windows',
+            '%mac_nightly_url%': 'nightly_macos'
         }
+
+        if 'factoid_variables' in self.bot.state:
+            self.variables.update(self.bot.state['factoid_variables'])
 
         if admin := self.bot.get_cog('Admin'):
             admin.add_help_section('Factoids', [
@@ -73,9 +75,11 @@ class Factoids(Cog):
 
     def set_variable(self, variable, value):
         self.variables[variable] = value
+        self.bot.state['factoid_variables'] = self.variables.copy()
 
     def resolve_variables(self, factoid_message):
-        for variable, value in self.variables.items():
+        for variable, state_variable in self.variables.items():
+            value = self.bot.state.get(state_variable, 'https://obsproject.com/4oh4')
             factoid_message = factoid_message.replace(variable, value)
         return factoid_message
 
