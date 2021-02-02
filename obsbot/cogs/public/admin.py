@@ -1,7 +1,7 @@
 import logging
 import time
 
-from discord import Embed, Game, CustomActivity
+from discord import Embed, Game
 from discord.ext.commands import Cog, command, Context
 
 from obsbot import __version__, __codename__
@@ -13,7 +13,7 @@ class Admin(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.help_sections = {
-            'Admininistrative': [
+            'Administrative': [
                 ('.help', 'Display this help'),
                 ('.status', 'prints the bot\'s current status')
             ]
