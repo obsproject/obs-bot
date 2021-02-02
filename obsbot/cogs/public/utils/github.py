@@ -224,7 +224,7 @@ class GitHubHelper:
     async def get_author_info(self, username):
         if username in self.user_cache:
             # check if data is stale, if not try refetching
-            if (time.time() - self.user_cache[username]['_timestamp']) < self.user_cache_max_age:
+            if (time.time() - self.user_cache[username].get('_timestamp', 0)) > self.user_cache_max_age:
                 return self.user_cache[username]
 
         try:
@@ -232,7 +232,7 @@ class GitHubHelper:
                                         headers={'Authorization': self.config['github_api_auth']}) as r:
                 author = await r.json()
                 self.user_cache[username] = author
-                self.user_cache['_timestamp'] = time.time()
+                self.user_cache[username]['_timestamp'] = time.time()
         except Exception as e:
             logger.warning(f'Fetching github userdata failed with {repr(e)}')
             # return potentially stale data if request fails
