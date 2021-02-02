@@ -33,7 +33,8 @@ class Webhooks(Cog):
         runner = web.AppRunner(app)
         await runner.setup()
         self.server = web.TCPSite(runner, 'localhost', self.config['port'])
-
+        # Silence access logging to console/logfile
+        logging.getLogger('aiohttp.access').setLevel(logging.WARNING)
         # wait for bot to be ready, then start and find the channels
         await self.bot.wait_until_ready()
         self.commits_channel = await self.bot.fetch_channel(self.config['github']['commits_channel'])
