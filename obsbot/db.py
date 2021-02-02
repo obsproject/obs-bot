@@ -20,7 +20,6 @@ class DBHelper:
         self.conn = await asyncpg.create_pool(host=config['host'], port=config['port'],
                                               user=config['user'], password=config['pass'],
                                               command_timeout=60)
-        # todo check if the database connection actually works
 
     async def query(self, query, *args, **kwargs) -> Union[List[asyncpg.Record], None]:
         """Execute query and return results"""
