@@ -316,7 +316,9 @@ class Factoids(Cog):
         if factoid['aliases']:
             embed.add_field(name='Aliases', value=', '.join(factoid['aliases']))
         embed.add_field(name='Uses (since 2018-06-07)', value=str(factoid['uses']))
-        embed.add_field(name='Uses embed', value=str(factoid['embed'] or factoid['image_embed']))
+        embed.add_field(name='Is Embed', value=str(factoid['embed']))
+        if factoid['image_url']:
+            embed.add_field(name='Image URL', value=factoid['image_url'])
         return await ctx.send(embed=embed)
 
     @command()
