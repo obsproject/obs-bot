@@ -190,9 +190,9 @@ class GitHubHelper:
             # update nightly build downloads in internal state
             if build_success and branch == 'master':
                 if 'macOS' in artifact['name']:
-                    self.state['nightly_macos'] = artifact
+                    self.state['nightly_macos'] = artifact['archive_download_url']
                 elif 'win64' in artifact['name']:
-                    self.state['nightly_windows'] = artifact
+                    self.state['nightly_windows'] = artifact['archive_download_url']
 
             artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
 
@@ -205,7 +205,7 @@ class GitHubHelper:
         embed.add_field(name="Branch", value=branch, inline=True)
         embed.add_field(name='Artifacts', inline=False,
                         value='\n'.join(artifacts_entries))
-        return embed, (commit_hash, message[0], reaction_emote, web_url)
+        return build_success, embed, (commit_hash, message[0], reaction_emote, web_url)
 
     async def get_with_retry(self, url, params=None, retries=5, retry_interval=5.0):
         for i in range(retries):
