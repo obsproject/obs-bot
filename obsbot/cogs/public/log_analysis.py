@@ -81,7 +81,7 @@ class LogAnalyser(Cog):
             logger.warning('There are too many possible log URLs, cutting down to 3...')
             log_candidates = log_candidates[:3]
 
-        with msg.channel.typing():
+        async with msg.channel.typing():
             for raw_url, html_url in log_candidates:
                 # download log for local analysis
                 try:
