@@ -207,7 +207,8 @@ class GitHubHelper:
                 elif 'win64' in artifact['name']:
                     self.state['nightly_windows'] = artifact['archive_download_url']
 
-            artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
+            artifact_name = artifact["name"].rpartition('-')[2]
+            artifacts_entries.append(f'[{artifact_name}]({artifact["archive_download_url"]})')
 
         embed = Embed(title=f'Build {run["run_number"]} {build_result}', url=web_url,
                       description='\n'.join(message), timestamp=finished,
@@ -218,7 +219,7 @@ class GitHubHelper:
         embed.add_field(name="Branch", value=branch, inline=True)
         # only attach artifact urls if build succeeded
         if build_success:
-            embed.add_field(name='Artifacts', inline=False, value='\n'.join(artifacts_entries))
+            embed.add_field(name='Artifacts', inline=False, value=', '.join(artifacts_entries))
 
         return build_success, embed, (commit_hash, message[0], reaction_emote, web_url)
 
