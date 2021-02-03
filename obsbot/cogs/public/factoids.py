@@ -332,14 +332,15 @@ class Factoids(Cog):
             return await ctx.send(f'The specified factoid ("{name}") does not exist!')
 
         factoid = self.factoids[name]
+        message = factoid["message"] if factoid["message"] else '<no message>'
         embed = Embed(title=f'Factoid information: {name}',
-                      description=f'```{factoid["message"]}```')
+                      description=f'```{message}```')
         if factoid['aliases']:
             embed.add_field(name='Aliases', value=', '.join(factoid['aliases']))
         embed.add_field(name='Uses (since 2018-06-07)', value=str(factoid['uses']))
         embed.add_field(name='Is Embed', value=str(factoid['embed']))
         if factoid['image_url']:
-            embed.add_field(name='Image URL', value=factoid['image_url'])
+            embed.add_field(name='Image URL', value=factoid['image_url'], inline=False)
         return await ctx.send(embed=embed)
 
     @command()
