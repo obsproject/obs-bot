@@ -80,6 +80,9 @@ class Factoids(Cog):
         self.bot.state['factoid_variables'] = self.variables.copy()
 
     def resolve_variables(self, factoid_message):
+        if '%' not in factoid_message:
+            return factoid_message
+
         for variable, state_variable in self.variables.items():
             value = self.bot.state.get(state_variable, 'https://obsproject.com/4oh4')
             factoid_message = factoid_message.replace(variable, value)
