@@ -145,8 +145,8 @@ class Factoids(Cog):
             await msg.delete(delay=0.0)
 
         # if users are mentioned (but it's not a reply), mention them in the bot reply as well
-        user_mention = ''
-        if msg.mentions and not ref:
+        user_mention = None
+        if msg.mentions and not msg.reference:
             user_mention = ' '.join(user.mention for user in msg.mentions)
 
         embed = None
