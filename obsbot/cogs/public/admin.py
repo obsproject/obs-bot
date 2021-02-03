@@ -28,7 +28,7 @@ class Admin(Cog):
         embed = Embed(title='OBS Bot Help')
         for section, commands in self.help_sections.items():
             longest = max(len(cmd) for cmd, _ in commands)
-            content = '\n'.join(f'{cmd}{" " * (longest - len(cmd) + 1)}- {helptext}'
+            content = '\n'.join(f'{cmd}{" " * (longest - len(cmd))} - {helptext}'
                                 for cmd, helptext in commands)
             embed.add_field(name=section,
                             value=f'```{content}```',
