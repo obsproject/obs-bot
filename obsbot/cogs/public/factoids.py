@@ -100,7 +100,6 @@ class Factoids(Cog):
         embed = None
         if self.factoids[ctx.name]['embed']:
             embed = Embed(colour=self._factoids_colour, description=message)
-            embed.set_footer(text=f'Factoid requested by {str(ctx.author)}')
             message = ''
             if self.factoids[ctx.name]['image_url']:
                 embed.set_image(url=self.factoids[ctx.name]['image_url'])
@@ -136,15 +135,9 @@ class Factoids(Cog):
         await self.increment_uses(factoid_name)
         message = self.resolve_variables(factoid['message'])
 
-        # default reference is the message by the requesting user,
-        # but if user was replying to somebody, use that instead
-        ref = msg
-        add_requester = False
+        # attempt to delete the message requesting the factoid if it's within a reply
         if msg.reference:
-            ref = msg.reference
-            # attempt to delete the message requesting the factoid (delay swallows errors)
             await msg.delete(delay=0.0)
-            add_requester = True
 
         # if users are mentioned (but it's not a reply), mention them in the bot reply as well
         user_mention = None
@@ -154,10 +147,6 @@ class Factoids(Cog):
         embed = None
         if factoid['embed']:
             embed = Embed(colour=self._factoids_colour, description=message)
-            # only add requester information if requester message was (attempted to be) deleted
-            if add_requester:
-                embed.set_footer(text=f'Factoid requested by {str(msg.author)}')
-
             message = ''
             if factoid['image_url']:
                 embed.set_image(url=factoid['image_url'])
@@ -167,7 +156,7 @@ class Factoids(Cog):
         elif user_mention:
             return await msg.channel.send(f'{user_mention} {message}')
         else:
-            return await msg.channel.send(message, embed=embed, reference=ref, mention_author=True)
+            return await msg.channel.send(message, embed=embed, reference=msg.reference, mention_author=True)
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(
