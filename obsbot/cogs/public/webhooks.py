@@ -43,6 +43,7 @@ class Webhooks(Cog):
         for cid in self.config['ci_channels']:
             self.ci_channels.append(self.bot.get_channel(cid))
 
+        logger.info(f'Start listening on localhost:{self.config["port"]}')
         await self.server.start()
 
     async def github_handler(self, request):
