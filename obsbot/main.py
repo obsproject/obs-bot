@@ -83,6 +83,10 @@ class OBSBot(commands.Bot):
 
     @staticmethod
     def is_private(channel: discord.TextChannel):
+        # DMs
+        if isinstance(channel, discord.abc.PrivateChannel):
+            return True
+        # Guild channels
         if channel.guild.default_role in channel.overwrites:
             if not channel.overwrites[channel.guild.default_role].pair()[0].read_messages:
                 return True
