@@ -103,23 +103,22 @@ class Webhooks(Cog):
                 return web.Response(text='OK')
 
             if body['action'] == 'completed':
-                result = await self.gh_helper.get_ci_results(body)
-                if not result:
-                    logger.error('Getting GitHub CI result failed.')
-                    return web.Response(text='OK but not really')
-                build_success, embed, update_info = result
-                self.bot.loop.create_task(self.add_ci_info_to_messages(*update_info))
-
-                # only post build result if build failed or status changed (e.g. success->failed)
-                if not build_success or (self.bot.state.get('ci_last_result', False) != build_success):
-                    for chan in self.ci_channels:
-                        await chan.send(embed=embed)
-
-                self.bot.state['ci_last_result'] = build_success
+                self.bot.loop.create_task(self.fetch_github_ci_results(body))
         else:
             logger.debug(f'Unhandled github event: {event}')
 
         return web.Response(text='OK')
+
+    async def fetch_github_ci_results(self, wh_body):
+        result = await self.gh_helper.get_ci_results(wh_body)
+        build_success, embed, update_info = result
+        # only post build result if build failed or status changed (e.g. success->failed)
+        if not build_success or (self.bot.state.get('ci_last_result', False) != build_success):
+            for chan in self.ci_channels:
+                await chan.send(embed=embed)
+        self.bot.state['ci_last_result'] = build_success
+
+        return await self.add_ci_info_to_messages(*update_info)
 
     async def add_messages_to_db(self, messages):
         inserts = [(c, m.channel.id, m.id) for m, c in messages]
