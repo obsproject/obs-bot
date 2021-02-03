@@ -120,19 +120,31 @@ class GitHubHelper:
     async def get_ci_results(self, event_body):
         check_suite_id = event_body['check_suite']['id']
         # todo allow for different workflows per repo
-        runs = await self.get_with_retry(f'https://api.github.com/repos/obsproject/obs-studio/'
-                                         f'actions/workflows/{self.config["workflow_id"]}/runs',
-                                         params=dict(event='push', status='completed', per_page=50))
-        # if request + all retries failed, just give up
-        if not runs:
-            logger.error('Getting GitHub workflow runs failed.')
-            return None
 
-        for run in runs['workflow_runs']:
-            if run['check_suite_id'] == check_suite_id:
+        # because the github API might not be updated by the time we get the webhook, we 'd want to retry
+        # this request a few times before giving up (did I mention the API related to actions is "great"? *sigh*)
+        run = None
+        for _try in range(1, 6):
+            runs = await self.get_with_retry(f'https://api.github.com/repos/obsproject/obs-studio/'
+                                             f'actions/workflows/{self.config["workflow_id"]}/runs',
+                                             params=dict(event='push', status='completed', per_page=50,
+                                                         t=int(time.time())))
+            # if request + all retries failed, just give up
+            if not runs and _try == 5:
+                logger.error('Getting GitHub workflow runs failed horribly.')
+                return None
+
+            if runs:
+                for _run in runs['workflow_runs']:
+                    if _run['check_suite_id'] == check_suite_id:
+                        run = _run
+                        break
+            if run:
                 break
+            # exponential backoff for subsequent tries
+            await asyncio.sleep(2.0 ** _try)
         else:
-            logger.error('Could not find check suite id in workflow runs.')
+            logger.error('Could not find check suite id in workflow runs after 5 retries.')
             return None
 
         # get some useful metadata from run information
