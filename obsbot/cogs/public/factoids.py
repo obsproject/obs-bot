@@ -86,7 +86,10 @@ class Factoids(Cog):
         return factoid_message
 
     async def slash_factoid(self, ctx: SlashContext, mentioned_user: User = None):
-        # this is preliminary until we have a decision on whether or not to actually use slash commands.
+        if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.command_id, ctx.channel.id):
+            logger.debug(f'{str(ctx.author)} attempted to request slash command but was rate-limited.')
+            return
+
         logger.info(f'Command: {ctx.name} ({ctx.command_id}) was called by {str(ctx.author)}')
         await self.increment_uses(ctx.name)
         message = self.resolve_variables(self.factoids[ctx.name]['message'])
@@ -121,7 +124,7 @@ class Factoids(Cog):
             else:  # factoid does not exit
                 return
 
-        if self.limiter.is_limited(factoid_name, msg.channel.id):
+        if not self.bot.is_supporter(msg.author) and self.limiter.is_limited(factoid_name, msg.channel.id):
             logger.debug(f'{str(msg.author)} attempted to request command but was rate-limited.')
             return
 

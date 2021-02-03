@@ -87,7 +87,7 @@ class LogAnalyser(Cog):
                 else:
                     continue
 
-                if not self.limiter.is_limited(raw_url):
+                if not self.bot.is_supporter(msg.author) and not self.limiter.is_limited(raw_url):
                     log_candidates.append((raw_url, html_url))
                 else:
                     logger.debug(f'{str(msg.author)} attempted to post a rate-limited log.')

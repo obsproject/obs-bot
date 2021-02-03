@@ -45,9 +45,11 @@ class OBSBot(commands.Bot):
         # set by on_ready
         self.start_time = None
         self.main_guild = None
+        self.supporter_role = None
         # admin ids, set via config, but can be changed at runtime
         self.admins = set(self.config['bot']['admins'])
         self.admins.add(self.config['bot']['owner'])
+        self.supporters = set()
 
     async def on_ready(self):
         logger.info('OBS Bot ready!')
@@ -55,6 +57,9 @@ class OBSBot(commands.Bot):
 
         self.start_time = time.time()
         self.main_guild = self.get_guild(self.config['bot']['main_guild'])
+        self.supporter_role = self.main_guild.get_role(self.config['bot']['supporter_role'])
+        for user in self.supporter_role.members:
+            self.supporters.add(user.id)
 
         if game := self.state.get('game', None):
             activity = discord.Game(game)
@@ -65,6 +70,13 @@ class OBSBot(commands.Bot):
 
     def is_admin(self, user: discord.Member):
         if user.id in self.admins:
+            return True
+        return False
+
+    def is_supporter(self, user: discord.Member):
+        if self.is_admin(user):
+            return True
+        elif user.id in self.supporters:
             return True
         return False
 
