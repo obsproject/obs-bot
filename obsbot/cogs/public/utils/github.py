@@ -203,8 +203,10 @@ class GitHubHelper:
                          icon_url='https://cdn.rodney.io/stuff/obsbot/github_actions.png')
         embed.add_field(name="Project", value=repo, inline=True)
         embed.add_field(name="Branch", value=branch, inline=True)
-        embed.add_field(name='Artifacts', inline=False,
-                        value='\n'.join(artifacts_entries))
+        # only attach artifact urls if build succeeded
+        if build_success:
+            embed.add_field(name='Artifacts', inline=False, value='\n'.join(artifacts_entries))
+
         return build_success, embed, (commit_hash, message[0], reaction_emote, web_url)
 
     async def get_with_retry(self, url, params=None, retries=5, retry_interval=5.0):
