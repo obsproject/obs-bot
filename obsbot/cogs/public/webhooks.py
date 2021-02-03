@@ -98,6 +98,10 @@ class Webhooks(Cog):
             if body['check_suite']['latest_check_runs_count'] < 2:
                 return web.Response(text='OK')
 
+            # ignore azure pipelines CI results
+            if body['check_suite']['app']['slug'] == 'azure-pipelines':
+                return web.Response(text='OK')
+
             if body['action'] == 'completed':
                 result = await self.gh_helper.get_ci_results(body)
                 if not result:
