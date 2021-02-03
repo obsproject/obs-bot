@@ -132,7 +132,7 @@ class GitHubHelper:
             if run['check_suite_id'] == check_suite_id:
                 break
         else:
-            logger.error('Could not find check suite id in workflow runs failed.')
+            logger.error('Could not find check suite id in workflow runs.')
             return None
 
         # get some useful metadata from run information
