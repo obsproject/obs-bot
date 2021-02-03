@@ -151,7 +151,7 @@ class Factoids(Cog):
             if factoid['image_url']:
                 embed.set_image(url=factoid['image_url'])
 
-        if user_mention and embed:
+        if user_mention and embed is not None:
             return await msg.channel.send(user_mention, embed=embed)
         elif user_mention:
             return await msg.channel.send(f'{user_mention} {message}')
