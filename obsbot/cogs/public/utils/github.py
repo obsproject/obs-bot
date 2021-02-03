@@ -142,6 +142,7 @@ class GitHubHelper:
             if run:
                 break
             # exponential backoff for subsequent tries
+            logger.warning(f'Check suite ID wasn\'t in workflow results, retrying in {2**_try} seconds...')
             await asyncio.sleep(2.0 ** _try)
         else:
             logger.error('Could not find check suite id in workflow runs after 5 retries.')
