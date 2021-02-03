@@ -56,12 +56,14 @@ class Webhooks(Cog):
             brief = await self.gh_helper.get_commit_messages(body, True)
             for embed, commit_hash in brief:
                 msg = await self.brief_channel.send(embed=embed)
-                messages.append((msg, commit_hash))
+                if commit_hash:
+                    messages.append((msg, commit_hash))
 
             full = await self.gh_helper.get_commit_messages(body, False)
             for embed, commit_hash in full:
                 msg = await self.commits_channel.send(embed=embed)
-                messages.append((msg, commit_hash))
+                if commit_hash:
+                    messages.append((msg, commit_hash))
 
             # finally, save the commit message ids to the database for CI additions later
             self.bot.loop.create_task(self.add_messages_to_db(messages))
