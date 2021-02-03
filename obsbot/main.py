@@ -81,6 +81,13 @@ class OBSBot(commands.Bot):
             return True
         return False
 
+    @staticmethod
+    def is_private(channel: discord.TextChannel):
+        if channel.guild.default_role in channel.overwrites:
+            if not channel.overwrites[channel.guild.default_role].pair()[0].read_messages:
+                return True
+        return False
+
     async def on_command_error(self, context, exception):
         """Swallow somwe errors we don't care about"""
         if isinstance(exception, commands.errors.CommandNotFound):
