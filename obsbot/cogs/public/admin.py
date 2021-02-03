@@ -45,7 +45,7 @@ class Admin(Cog):
                         value=(f'Version:  {__version__} - "{__codename__}" Edition\n'
                                f'Uptime:  {time.time() - self.bot.start_time:.0f} seconds\n'))
 
-        mentions = ', '.join(u.mention for u in (self.bot.get_user(_id) for _id in self.bot.admins))
+        mentions = ', '.join(u.mention for u in (self.bot.get_user(_id) for _id in self.bot.admins) if u)
         embed.add_field(name='Bot admins', inline=False, value=mentions)
 
         # get information from other Cogs if possible
