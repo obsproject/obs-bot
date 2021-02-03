@@ -9,7 +9,7 @@ from obsbot import __version__, __codename__
 from obsbot.main import OBSBot
 
 _log_dt_fmt = '%Y-%m-%d %H:%M:%S'
-_log_fmt = '[{asctime}] [{name}] {levelname}: {message}'
+_log_fmt = '[{asctime}] [{levelname}] {name}: {message}'
 logging.basicConfig(format=_log_fmt, datefmt=_log_dt_fmt, style='{', level=logging.INFO)
 logger = logging.getLogger('runner')
 
@@ -25,7 +25,7 @@ def setup_logging(logfile=None, debug=False):
         log.setLevel(logging.INFO if not debug else logging.DEBUG)
         if logfile:
             handler = RotatingFileHandler(filename=logfile, encoding='utf-8',
-                                          mode='w', maxBytes=max_bytes, backupCount=5)
+                                          mode='a', maxBytes=max_bytes, backupCount=5)
             fmt = logging.Formatter(_log_fmt, _log_dt_fmt, style='{')
             handler.setFormatter(fmt)
             log.addHandler(handler)
