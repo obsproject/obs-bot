@@ -58,8 +58,9 @@ class OBSBot(commands.Bot):
         self.start_time = time.time()
         self.main_guild = self.get_guild(self.config['bot']['main_guild'])
         self.supporter_role = self.main_guild.get_role(self.config['bot']['supporter_role'])
-        for user in self.supporter_role.members:
-            self.supporters.add(user.id)
+        if self.supporter_role:
+            for user in self.supporter_role.members:
+                self.supporters.add(user.id)
 
         if game := self.state.get('game', None):
             activity = discord.Game(game)
