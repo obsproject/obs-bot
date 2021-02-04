@@ -203,9 +203,9 @@ class GitHubHelper:
             # update nightly build downloads in internal state
             if build_success and branch == 'master':
                 if 'macOS' in artifact['name']:
-                    self.state['nightly_macos'] = artifact['archive_download_url']
+                    self.state['nightly_macos'] = self.config['artifact_service'].format(artifact['id'])
                 elif 'win64' in artifact['name']:
-                    self.state['nightly_windows'] = artifact['archive_download_url']
+                    self.state['nightly_windows'] = self.config['artifact_service'].format(artifact['id'])
 
             artifact_name = artifact["name"].rpartition('-')[2]
             artifacts_entries.append(f'[{artifact_name}]({artifact["archive_download_url"]})')
