@@ -104,7 +104,7 @@ class Factoids(Cog):
             if self.factoids[ctx.name]['image_url']:
                 embed.set_image(url=self.factoids[ctx.name]['image_url'])
 
-        if mentioned_user:
+        if mentioned_user and isinstance(mentioned_user, User):
             return await ctx.send(send_type=3, content=f'{mentioned_user.mention} {message}', embeds=[embed])
         else:
             return await ctx.send(send_type=3, content=message, embeds=[embed])
