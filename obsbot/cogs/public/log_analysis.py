@@ -310,7 +310,7 @@ class LogAnalyser(Cog):
                         # vendor match quality is about the same, but some GPU names are too short
                         min_match = 2 if len(gpu_parts) <= 4 else 3
                         if best_match[0] < min_match:
-                            logger.warning('Could not find acceptable match (update required?): {gpu}')
+                            logger.warning(f'Could not find acceptable match (update required?): {gpu}')
                         else:
                             res['gpu_bench'] = best_match[1]
 
