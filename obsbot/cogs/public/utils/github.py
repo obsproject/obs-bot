@@ -94,7 +94,13 @@ class GitHubHelper:
         event_body['pull_request']['body'] = '\n'.join(
             l.strip() for l in event_body['pull_request']['body'].splitlines() if not l.startswith('<!-')
         )
-        embed.description = event_body['pull_request']['body']
+
+        # trim message to discord limits
+        if len(event_body['pull_request']['body']) >= 2048:
+            embed.description = event_body['pull_request']['body'][:2000] + ' [... message trimmed]'
+        else:
+            embed.description = event_body['pull_request']['body']
+
         return brief_embed, embed
 
     async def get_issue_messages(self, event_body):
@@ -114,7 +120,12 @@ class GitHubHelper:
         event_body['issue']['body'] = '\n'.join(
             l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-')
         )
-        embed.description = event_body['issue']['body']
+
+        if len(event_body['issue']['body']) >= 2048:
+            embed.description = event_body['issue']['body'][:2000] + ' [... message trimmed]'
+        else:
+            embed.description = event_body['issue']['body']
+
         return brief_embed, embed
 
     async def get_ci_results(self, event_body):
