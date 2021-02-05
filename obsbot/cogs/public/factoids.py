@@ -130,7 +130,7 @@ class Factoids(Cog):
             logger.debug(f'{str(msg.author)} attempted to request command but was rate-limited.')
             return
 
-        logger.info(f'Factoid "{factoid_name}" requested by "{str(msg.author)}"')
+        logger.info(f'Factoid "{factoid_name}" requested by "{str(msg.author)}" in "{str(msg.channel)}"')
         factoid = self.factoids[factoid_name]
         await self.increment_uses(factoid_name)
         message = self.resolve_variables(factoid['message'])
