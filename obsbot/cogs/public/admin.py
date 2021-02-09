@@ -1,7 +1,7 @@
 import logging
 import time
 
-from discord import Embed, Game
+from discord import Embed, Game, Activity, ActivityType
 from discord.ext.commands import Cog, command, Context
 
 from obsbot import __version__, __codename__
@@ -72,13 +72,23 @@ class Admin(Cog):
 
         return await ctx.channel.send(embed=embed)
 
-    @command(aliases=['setgame', 'changegame'])
-    async def setpresence(self, ctx: Context, *, activity):
+    @command(aliases=['changegame'])
+    async def setgame(self, ctx: Context, *, activity):
         if not self.bot.is_admin(ctx.author):
             return
         logger.info(f'Game changed to "{activity}" by {str(ctx.author)}')
         self.bot.state['game'] = activity
+        self.bot.state['song'] = None
         return await self.bot.change_presence(activity=Game(activity))
+
+    @command(aliases=['changesong'])
+    async def setsong(self, ctx: Context, *, activity):
+        if not self.bot.is_admin(ctx.author):
+            return
+        logger.info(f'Song changed to "{activity}" by {str(ctx.author)}')
+        self.bot.state['game'] = None
+        self.bot.state['song'] = activity
+        return await self.bot.change_presence(activity=Activity(name=activity, type=ActivityType.listening))
 
     def add_help_section(self, section_name, command_list):
         """Allows external Cogs to register their own help section"""

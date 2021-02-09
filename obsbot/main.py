@@ -64,6 +64,8 @@ class OBSBot(commands.Bot):
 
         if game := self.state.get('game', None):
             activity = discord.Game(game)
+        elif song := self.state.get('song', None):
+            activity = discord.Activity(name=song, type=discord.ActivityType.listening)
         else:
             activity = discord.Activity(name='your problems', type=discord.ActivityType.listening)
 
