@@ -1,6 +1,6 @@
 import logging
 
-from discord import Message, Embed, User
+from discord import Message, Embed, Member, User
 from discord.ext.commands import Cog, command, Context
 from discord_slash import SlashContext
 
@@ -88,7 +88,7 @@ class Factoids(Cog):
             factoid_message = factoid_message.replace(variable, value)
         return factoid_message
 
-    async def slash_factoid(self, ctx: SlashContext, mentioned_user: User = None):
+    async def slash_factoid(self, ctx: SlashContext, mentioned_user: Member = None):
         if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.command_id, ctx.channel.id):
             logger.debug(f'{str(ctx.author)} attempted to request slash command but was rate-limited.')
             return
@@ -104,7 +104,7 @@ class Factoids(Cog):
             if self.factoids[ctx.name]['image_url']:
                 embed.set_image(url=self.factoids[ctx.name]['image_url'])
 
-        if mentioned_user and isinstance(mentioned_user, User):
+        if mentioned_user and isinstance(mentioned_user, Member):
             return await ctx.send(send_type=3, content=f'{mentioned_user.mention} {message}', embeds=[embed])
         else:
             return await ctx.send(send_type=3, content=message, embeds=[embed])
