@@ -15,7 +15,9 @@ class Admin(Cog):
         self.help_sections = {
             'Administrative': [
                 ('.help', 'Display this help'),
-                ('.status', 'prints the bot\'s current status')
+                ('.status', 'prints the bot\'s current status'),
+                ('.setgame', 'Set the bot\'s "Playing ..." status'),
+                ('.setsong', 'Set the bot\'s "Listening to ..." status'),
             ]
         }
 
