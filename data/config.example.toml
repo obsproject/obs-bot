@@ -57,6 +57,7 @@ access_token_secret = "<secret>"
 enabled = true
 db_table = "factoids"
 cooldown = 5.0
+slash_command_limit = 10
 
 [log_analyser]
 enabled = true
