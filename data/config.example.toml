@@ -56,9 +56,11 @@ access_token_secret = "<secret>"
 [factoids]
 enabled = true
 db_table = "factoids"
+cooldown = 5.0
 
 [log_analyser]
 enabled = true
 hw_check_enabled = true
 db_table = "hardware_stats"
 channel_blacklist = [12345678909876654321]
+cooldown = 5.0
