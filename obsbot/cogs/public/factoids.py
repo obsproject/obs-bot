@@ -19,6 +19,8 @@ class Factoids(Cog):
         self.config = config
         self.limiter = RateLimiter(self.config.get('cooldown', 20.0))
 
+        self.initial_commands_sync_done = False
+
         # The variables map to state variables, can be added at runtime
         self.variables = {
             '%nightly_url%': 'nightly_windows',
@@ -89,10 +91,12 @@ class Factoids(Cog):
             self.bot.slash.commands.pop(obsolete, None)
 
         # sync commands with discord API (only run if commands have already been registered)
-        if new_commands:
+        if new_commands or not self.initial_commands_sync_done:
             self.bot.loop.create_task(self.bot.slash.register_all_commands())
-        if old_commands and commands:
+        if old_commands or not self.initial_commands_sync_done:
             self.bot.loop.create_task(self.bot.slash.delete_unused_commands())
+
+        self.initial_commands_sync_done = True
 
     def set_variable(self, variable, value):
         self.variables[variable] = value
