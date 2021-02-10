@@ -64,16 +64,35 @@ class Factoids(Cog):
             for alias in record['aliases']:
                 self.alias_map[alias] = name
 
-        for factoid in sorted(self.factoids.values(), key=lambda a: a['uses'], reverse=True)[:10]:
-            # todo remove old ones if necessary
-            if factoid['name'] not in self.bot.slash.commands:
-                self.bot.slash.add_slash_command(self.slash_factoid, name=factoid['name'],
-                                                 description=f'{factoid["name"]} factoid',
-                                                 guild_ids=[self.bot.config['bot']['main_guild']],
-                                                 options=[dict(type=6, name='mention',
-                                                               description='User(s) to mention',
-                                                               required=False)],
-                                                 auto_convert=dict(mention='user'))
+        # Get top N commands, register new and unregister old ones
+        rows = await self.bot.db.query(f'SELECT "name" FROM "{self.config["db_table"]}" '
+                                       f'ORDER BY "uses" DESC LIMIT {self.config["slash_command_limit"]}')
+        # some simple set maths to get new/old/current commands
+        commands = set(r['name'] for r in rows)
+        old_commands = set(self.bot.slash.commands.keys())
+        new_commands = commands - old_commands
+        old_commands -= commands
+
+        for factoid in new_commands:
+            logger.info(f'Adding slash command for "{factoid}"')
+            self.bot.slash.add_slash_command(self.slash_factoid, name=factoid,
+                                             description=f'Sends "{factoid}" factoid',
+                                             guild_ids=[self.bot.config['bot']['main_guild']],
+                                             options=[dict(type=6, name='mention',
+                                                           description='User(s) to mention',
+                                                           required=False)],
+                                             auto_convert=dict(mention='user'))
+
+        # Delete commands that are now obsolete
+        for obsolete in old_commands:
+            logger.info(f'Removing slash command "{obsolete}"')
+            self.bot.slash.commands.pop(obsolete, None)
+
+        # sync commands with discord API (only run if commands have already been registered)
+        if new_commands:
+            self.bot.loop.create_task(self.bot.slash.register_all_commands())
+        if old_commands and commands:
+            self.bot.loop.create_task(self.bot.slash.delete_unused_commands())
 
     def set_variable(self, variable, value):
         self.variables[variable] = value
