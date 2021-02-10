@@ -24,7 +24,7 @@ class OBSBot(commands.Bot):
                                   messages=True, reactions=True, voice_states=False)
         super().__init__(command_prefix='.', help_command=None, intents=intents)
         # enable slash commands
-        self.slash = SlashCommand(self, auto_register=True, auto_delete=True)
+        self.slash = SlashCommand(self, auto_delete=True)
 
         self.config = toml.load(open(config_file))
         self.state = StateFile(self.config['bot']['state_file'])
