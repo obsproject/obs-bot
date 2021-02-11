@@ -3,7 +3,7 @@ import contextlib
 import logging
 import os
 
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 
 from obsbot import __version__, __codename__
 from obsbot.main import OBSBot
@@ -24,8 +24,8 @@ def setup_logging(logfile=None, debug=False):
         log = logging.getLogger()
         log.setLevel(logging.INFO if not debug else logging.DEBUG)
         if logfile:
-            handler = RotatingFileHandler(filename=logfile, encoding='utf-8',
-                                          mode='a', maxBytes=max_bytes, backupCount=5)
+            handler = TimedRotatingFileHandler(filename=logfile, when='midnight', utc=True,
+                                               encoding='utf-8', backupCount=5)
             fmt = logging.Formatter(_log_fmt, _log_dt_fmt, style='{')
             handler.setFormatter(fmt)
             log.addHandler(handler)
