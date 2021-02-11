@@ -110,17 +110,17 @@ class LogAnalyser(Cog):
                     logger.error(f'Failed retrieving log from "{raw_url}"')
                     continue
                 except Exception as e:  # catch everything else
-                    logger.error(f'Unhanled exception when downloading log: {repr(e)}')
+                    logger.error(f'Unhandled exception when downloading log: {repr(e)}')
                     continue
 
                 # fetch log analysis from OBS analyser
                 try:
                     log_analysis = await self.fetch_log_analysis(raw_url)
                 except ClientResponseError:  # file download failed
-                    logger.error(f'Failed retrieving log from "{raw_url}"')
+                    logger.error(f'Failed retrieving log analysis from "{raw_url}"')
                     continue
                 except Exception as e:  # catch everything else
-                    logger.error(f'Unhanled exception when downloading log: {repr(e)}')
+                    logger.error(f'Unhandled exception when analysing log: {repr(e)}')
                     continue
 
                 # check if analysis json is actually valid
