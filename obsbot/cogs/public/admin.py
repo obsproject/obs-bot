@@ -20,15 +20,19 @@ class Admin(Cog):
                 ('.setsong', 'Set the bot\'s "Listening to ..." status'),
             ]
         }
+        self.restricted = set()
 
     @command()
     async def help(self, ctx: Context):
         # unfortunately the @check decorator doesn't really work for this use case.
         if not self.bot.is_admin(ctx.author):
             return
+        is_private = self.bot.is_private(ctx.channel)
 
         embed = Embed(title='OBS Bot Help')
         for section, commands in self.help_sections.items():
+            if section in self.restricted and not is_private:
+                continue
             longest = max(len(cmd) for cmd, _ in commands)
             content = '\n'.join(f'{cmd}{" " * (longest - len(cmd))} - {helptext}'
                                 for cmd, helptext in commands)
@@ -92,9 +96,11 @@ class Admin(Cog):
         self.bot.state['song'] = activity
         return await self.bot.change_presence(activity=Activity(name=activity, type=ActivityType.listening))
 
-    def add_help_section(self, section_name, command_list):
+    def add_help_section(self, section_name, command_list, restricted=False):
         """Allows external Cogs to register their own help section"""
         self.help_sections[section_name] = command_list
+        if restricted:
+            self.restricted.add(section_name)
 
 
 def setup(bot):
