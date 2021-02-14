@@ -82,8 +82,7 @@ class Factoids(Cog):
                                              guild_ids=[self.bot.config['bot']['main_guild']],
                                              options=[dict(type=6, name='mention',
                                                            description='User(s) to mention',
-                                                           required=False)],
-                                             auto_convert=dict(mention='user'))
+                                                           required=False)])
 
         # Delete commands that are now obsolete
         for obsolete in old_commands:
@@ -91,10 +90,8 @@ class Factoids(Cog):
             self.bot.slash.commands.pop(obsolete, None)
 
         # sync commands with discord API (only run if commands have already been registered)
-        if new_commands or not self.initial_commands_sync_done:
-            self.bot.loop.create_task(self.bot.slash.register_all_commands())
-        if old_commands or not self.initial_commands_sync_done:
-            self.bot.loop.create_task(self.bot.slash.delete_unused_commands())
+        if new_commands or new_commands or not self.initial_commands_sync_done:
+            self.bot.loop.create_task(self.bot.slash.sync_all_commands())
 
         self.initial_commands_sync_done = True
 
@@ -112,7 +109,7 @@ class Factoids(Cog):
         return factoid_message
 
     async def slash_factoid(self, ctx: SlashContext, mentioned_user: Member = None):
-        if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.command_id, ctx.channel.id):
+        if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.command_id, ctx.channel_id):
             logger.debug(f'{str(ctx.author)} attempted to request slash command but was rate-limited.')
             return
 
@@ -127,10 +124,11 @@ class Factoids(Cog):
             if self.factoids[ctx.name]['image_url']:
                 embed.set_image(url=self.factoids[ctx.name]['image_url'])
 
+        await ctx.respond(eat=True)
         if mentioned_user and isinstance(mentioned_user, Member):
-            return await ctx.send(send_type=3, content=f'{mentioned_user.mention} {message}', embeds=[embed])
+            return await ctx.send(content=f'{mentioned_user.mention} {message}', embeds=[embed])
         else:
-            return await ctx.send(send_type=3, content=message, embeds=[embed])
+            return await ctx.send(content=message, embeds=[embed])
 
     @Cog.listener()
     async def on_message(self, msg: Message):
