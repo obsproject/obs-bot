@@ -110,10 +110,10 @@ class Factoids(Cog):
 
     async def slash_factoid(self, ctx: SlashContext, mentioned_user: Member = None):
         if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.command_id, ctx.channel_id):
-            logger.debug(f'{str(ctx.author)} attempted to request slash command but was rate-limited.')
+            logger.debug(f'rate-limited (sc): "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.name}"')
             return
 
-        logger.info(f'Command: {ctx.name} ({ctx.command_id}) was called by {str(ctx.author)}')
+        logger.info(f'factoid requested (sc) by: "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.name}"')
         await self.increment_uses(ctx.name)
         message = self.resolve_variables(self.factoids[ctx.name]['message'])
 
@@ -148,10 +148,10 @@ class Factoids(Cog):
                 return
 
         if not self.bot.is_supporter(msg.author) and self.limiter.is_limited(factoid_name, msg.channel.id):
-            logger.debug(f'{str(msg.author)} attempted to request command but was rate-limited.')
+            logger.debug(f'rate-limited: "{msg.author}", channel: "{msg.channel}", factoid: "{factoid_name}"')
             return
 
-        logger.info(f'Factoid "{factoid_name}" requested by "{str(msg.author)}" in "{str(msg.channel)}"')
+        logger.info(f'factoid requested by: "{msg.author}", channel: "{msg.channel}", factoid: "{factoid_name}"')
         factoid = self.factoids[factoid_name]
         await self.increment_uses(factoid_name)
         message = self.resolve_variables(factoid['message'])
