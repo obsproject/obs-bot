@@ -156,8 +156,8 @@ class Factoids(Cog):
         await self.increment_uses(factoid_name)
         message = self.resolve_variables(factoid['message'])
 
-        # attempt to delete the message requesting the factoid if it's within a reply
-        if msg.reference:
+        # attempt to delete the message requesting the factoid if it's within a reply and only contains command
+        if msg.reference and len(msg_parts) == 1:
             await msg.delete(delay=0.0)
 
         # if users are mentioned (but it's not a reply), mention them in the bot reply as well
