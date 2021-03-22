@@ -249,6 +249,9 @@ class GitHubHelper:
         return None
 
     async def get_author_info(self, username):
+        if not username:
+            return None
+        
         if username in self.user_cache:
             # check if data is stale, if not try refetching
             if (time.time() - self.user_cache[username].get('_timestamp', 0)) > self.user_cache_max_age:
