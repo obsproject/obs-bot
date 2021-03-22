@@ -257,6 +257,7 @@ class GitHubHelper:
         try:
             async with self.session.get(f'https://api.github.com/users/{username}',
                                         headers={'Authorization': self.config['github_api_auth']}) as r:
+                r.raise_for_status()
                 author = await r.json()
                 self.user_cache[username] = author
                 self.user_cache[username]['_timestamp'] = time.time()
