@@ -348,13 +348,13 @@ class Factoids(Cog):
 
     @command()
     async def info(self, ctx: Context, name: str.lower):
-        name = name if name in self.factoids else self.alias_map.get(name)
-        if name not in self.factoids:
+        _name = name if name in self.factoids else self.alias_map.get(name)
+        if not _name or _name not in self.factoids:
             return await ctx.send(f'The specified factoid ("{name}") does not exist!')
 
-        factoid = self.factoids[name]
+        factoid = self.factoids[_name]
         message = factoid["message"] if factoid["message"] else '<no message>'
-        embed = Embed(title=f'Factoid information: {name}',
+        embed = Embed(title=f'Factoid information: {_name}',
                       description=f'```{message}```')
         if factoid['aliases']:
             embed.add_field(name='Aliases', value=', '.join(factoid['aliases']))
