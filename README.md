@@ -20,5 +20,4 @@ for the OBS Project are likely to be rejected.
 
 ## License
 
-The OBS Bot source code is licensed under the GNU Affero General Public License v3.
-
+The OBS Bot source code is licensed under the GNU General Public License v3.
