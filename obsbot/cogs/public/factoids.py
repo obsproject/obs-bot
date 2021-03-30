@@ -270,6 +270,8 @@ class Factoids(Cog):
         _name = name if name in self.factoids else self.alias_map.get(name)
         if not _name or _name not in self.factoids:
             return await ctx.send(f'The specified factoid ("{name}") does not exist!')
+        if alias in self.factoids:
+            return await ctx.send(f'The specified alias ("{alias}") is the name of an existing factoid!')
         if alias in self.alias_map:
             return await ctx.send(f'The specified alias ("{alias}") already exists!')
 
