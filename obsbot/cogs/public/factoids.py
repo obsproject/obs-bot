@@ -353,7 +353,7 @@ class Factoids(Cog):
             return await ctx.send(f'The specified factoid ("{name}") does not exist!')
 
         factoid = self.factoids[_name]
-        message = factoid["message"] if factoid["message"] else '<no message>'
+        message = factoid["message"].replace('`', '\\`') if factoid["message"] else '<no message>'
         embed = Embed(title=f'Factoid information: {_name}',
                       description=f'```{message}```')
         if factoid['aliases']:
