@@ -132,9 +132,11 @@ class GitHubHelper:
     async def get_discussion_messages(self, event_body):
         discussion_number = event_body['discussion']['number']
         title = event_body['discussion']['title']
+        category = event_body['discussion']['category']['name']
         timestamp = dateutil.parser.parse(event_body['discussion']['created_at'])
-        embed = Embed(title=f'#{discussion_number}: {title}', colour=Colour(self._discussion_colour),
-                      url=event_body['discussion']['html_url'], timestamp=timestamp)
+        embed = Embed(title=f'#{discussion_number}: {category} - {title}',
+                      colour=Colour(self._discussion_colour), timestamp=timestamp,
+                      url=event_body['discussion']['html_url'])
         embed.set_author(name=event_body['discussion']['user']['login'],
                          url=event_body['discussion']['user']['html_url'],
                          icon_url=event_body['discussion']['user']['avatar_url'])
