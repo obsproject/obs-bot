@@ -82,9 +82,13 @@ class GitHubHelper:
         timestamp = dateutil.parser.parse(event_body['pull_request']['created_at'])
         embed = Embed(title=f'#{pr_number}: {title}', colour=Colour(self._pull_request_colour),
                       url=event_body['pull_request']['html_url'], timestamp=timestamp)
-        # no need to fetch user data for PRs
-        embed.set_author(name=event_body['pull_request']['user']['login'],
-                         url=event_body['pull_request']['user']['html_url'],
+
+        author_name = event_body['pull_request']['user']['login']
+        author = await self.get_author_info(author_name)
+        if author and author['name'] and author['name'] != author['login']:
+            author_name = f'{author["name"]} ({author["login"]})'
+
+        embed.set_author(name=author_name, url=event_body['pull_request']['user']['html_url'],
                          icon_url=event_body['pull_request']['user']['avatar_url'])
 
         embed.set_footer(text='Pull Request')
@@ -110,8 +114,13 @@ class GitHubHelper:
         timestamp = dateutil.parser.parse(event_body['issue']['created_at'])
         embed = Embed(title=f'#{issue_number}: {title}', colour=Colour(self._issue_colour),
                       url=event_body['issue']['html_url'], timestamp=timestamp)
-        embed.set_author(name=event_body['issue']['user']['login'],
-                         url=event_body['issue']['user']['html_url'],
+
+        author_name = event_body['discussion']['user']['login']
+        author = await self.get_author_info(author_name)
+        if author and author['name'] and author['name'] != author['login']:
+            author_name = f'{author["name"]} ({author["login"]})'
+
+        embed.set_author(name=author_name, url=event_body['issue']['user']['html_url'],
                          icon_url=event_body['issue']['user']['avatar_url'])
 
         embed.set_footer(text='Issue')
@@ -137,8 +146,13 @@ class GitHubHelper:
         embed = Embed(title=f'#{discussion_number}: {category} - {title}',
                       colour=Colour(self._discussion_colour), timestamp=timestamp,
                       url=event_body['discussion']['html_url'])
-        embed.set_author(name=event_body['discussion']['user']['login'],
-                         url=event_body['discussion']['user']['html_url'],
+
+        author_name = event_body['discussion']['user']['login']
+        author = await self.get_author_info(author_name)
+        if author and author['name'] and author['name'] != author['login']:
+            author_name = f'{author["name"]} ({author["login"]})'
+
+        embed.set_author(name=author_name, url=event_body['discussion']['user']['html_url'],
                          icon_url=event_body['discussion']['user']['avatar_url'])
 
         embed.set_footer(text='Discussion')
