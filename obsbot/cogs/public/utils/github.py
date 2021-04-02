@@ -14,6 +14,7 @@ class GitHubHelper:
     _skipped_commit_colour = 0x9b9b9b
     _pull_request_colour = 0x366d6
     _issue_colour = 0x2CBE4E
+    _discussion_colour = 0x9a66ee
     _ci_failed_colour = 0xd0021b
     _ci_some_failed_colour = 0xF5A623
     _ci_passed_colour = 0x7ED321
@@ -125,6 +126,31 @@ class GitHubHelper:
             embed.description = event_body['issue']['body'][:2000] + ' [... message trimmed]'
         else:
             embed.description = event_body['issue']['body']
+
+        return brief_embed, embed
+
+    async def get_discussion_messages(self, event_body):
+        discussion_number = event_body['discussion']['number']
+        title = event_body['discussion']['title']
+        timestamp = dateutil.parser.parse(event_body['discussion']['created_at'])
+        embed = Embed(title=f'#{discussion_number}: {title}', colour=Colour(self._discussion_colour),
+                      url=event_body['discussion']['html_url'], timestamp=timestamp)
+        embed.set_author(name=event_body['discussion']['user']['login'],
+                         url=event_body['discussion']['user']['html_url'],
+                         icon_url=event_body['discussion']['user']['avatar_url'])
+
+        embed.set_footer(text='Discussion')
+        embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
+        # create copy without description text for brief channel
+        brief_embed = embed.copy()
+        event_body['discussion']['body'] = '\n'.join(
+            l.strip() for l in event_body['discussion']['body'].splitlines() if not l.startswith('<!-')
+        )
+
+        if len(event_body['discussion']['body']) >= 1024:
+            embed.description = event_body['discussion']['body'][:1024] + ' [... message trimmed]'
+        else:
+            embed.description = event_body['discussion']['body']
 
         return brief_embed, embed
 
