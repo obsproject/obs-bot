@@ -104,6 +104,12 @@ class Webhooks(Cog):
 
             if body['action'] == 'completed':
                 self.bot.loop.create_task(self.fetch_github_ci_results(body))
+        elif event == 'discussion':
+            # similar to issues/prs, but styled differently
+            if body['action'] == 'created':
+                brief, full = await self.gh_helper.get_discussion_messages(body)
+                await self.brief_channel.send(embed=brief)
+                await self.commits_channel.send(embed=full)
         else:
             logger.debug(f'Unhandled github event: {event}')
 
