@@ -115,7 +115,7 @@ class GitHubHelper:
         embed = Embed(title=f'#{issue_number}: {title}', colour=Colour(self._issue_colour),
                       url=event_body['issue']['html_url'], timestamp=timestamp)
 
-        author_name = event_body['discussion']['user']['login']
+        author_name = event_body['issue']['user']['login']
         author = await self.get_author_info(author_name)
         if author and author['name'] and author['name'] != author['login']:
             author_name = f'{author["name"]} ({author["login"]})'
