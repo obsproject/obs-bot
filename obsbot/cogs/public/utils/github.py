@@ -131,10 +131,15 @@ class GitHubHelper:
             l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-')
         )
 
-        if len(event_body['issue']['body']) >= 2048:
-            embed.description = event_body['issue']['body'][:2000] + ' [... message trimmed]'
+        issue_text = event_body['issue']['body']
+        # strip double-newlines from issue forms
+        if '\n\n' in issue_text:
+            issue_text = issue_text.replace('\n\n', '\n')
+
+        if len(issue_text) >= 2048:
+            embed.description = issue_text[:2000] + ' [... message trimmed]'
         else:
-            embed.description = event_body['issue']['body']
+            embed.description = issue_text
 
         return brief_embed, embed
 
