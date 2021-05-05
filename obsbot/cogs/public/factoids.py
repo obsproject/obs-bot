@@ -108,7 +108,7 @@ class Factoids(Cog):
             factoid_message = factoid_message.replace(variable, value)
         return factoid_message
 
-    async def slash_factoid(self, ctx: SlashContext, mentioned_user: Member = None):
+    async def slash_factoid(self, ctx: SlashContext, mention: Member = None):
         if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.command_id, ctx.channel_id):
             logger.debug(f'rate-limited (sc): "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.name}"')
             return
@@ -124,11 +124,10 @@ class Factoids(Cog):
             if self.factoids[ctx.name]['image_url']:
                 embed.set_image(url=self.factoids[ctx.name]['image_url'])
 
-        await ctx.respond(eat=True)
-        if mentioned_user and isinstance(mentioned_user, Member):
-            return await ctx.send(content=f'{mentioned_user.mention} {message}', embeds=[embed])
+        if mention and isinstance(mention, Member):
+            return await ctx.send(content=f'{mention.mention} {message}', embed=embed)
         else:
-            return await ctx.send(content=message, embeds=[embed])
+            return await ctx.send(content=message, embed=embed)
 
     @Cog.listener()
     async def on_message(self, msg: Message):
