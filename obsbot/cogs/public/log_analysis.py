@@ -100,6 +100,15 @@ class LogAnalyser(Cog):
             logger.warning('There are too many possible log URLs, cutting down to 3...')
             log_candidates = log_candidates[:3]
 
+        async def react_with(emoji):
+            try:
+                await msg.add_reaction(emoji)
+            except Exception:
+                return
+
+        def react(emoji):
+            self.bot.loop.create_task(react_with(emoji))
+
         async with msg.channel.typing():
             for raw_url, html_url in log_candidates:
                 # download log for local analysis
@@ -109,9 +118,11 @@ class LogAnalyser(Cog):
                     continue
                 except ClientResponseError:  # file download failed
                     logger.error(f'Failed retrieving log from "{raw_url}"')
+                    react('❌')
                     continue
                 except Exception as e:  # catch everything else
                     logger.error(f'Unhandled exception when downloading log: {repr(e)}')
+                    react('❌')
                     continue
 
                 # fetch log analysis from OBS analyser
@@ -119,17 +130,21 @@ class LogAnalyser(Cog):
                     log_analysis = await self.fetch_log_analysis(raw_url)
                 except ClientResponseError:  # file download failed
                     logger.error(f'Failed retrieving log analysis from "{raw_url}"')
+                    react('❌')
                     continue
                 except TimeoutError: # analyser failed to respond
                     logger.error(f'Analyser timed out for log file "{raw_url}"')
+                    react('❌')
                     continue
                 except Exception as e:  # catch everything else
                     logger.error(f'Unhandled exception when analysing log: {repr(e)}')
+                    react('❌')
                     continue
 
                 # check if analysis json is actually valid
                 if not all(i in log_analysis for i in ('critical', 'warning', 'info')):
                     logger.error(f'Analyser result for "{raw_url}" is invalid.')
+                    react('❌')
                     continue
 
                 anal_url = f'https://obsproject.com/tools/analyzer?log_url={urlencode(html_url)}'
