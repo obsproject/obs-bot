@@ -5,6 +5,7 @@ import random
 from urllib.parse import quote_plus as urlencode
 
 from aiohttp import ClientResponseError
+from asyncio import TimeoutError
 from discord import Message, Embed, Colour
 from discord.ext.commands import Cog, command, Context
 
@@ -118,6 +119,9 @@ class LogAnalyser(Cog):
                     log_analysis = await self.fetch_log_analysis(raw_url)
                 except ClientResponseError:  # file download failed
                     logger.error(f'Failed retrieving log analysis from "{raw_url}"')
+                    continue
+                except TimeoutError: # analyser failed to respond
+                    logger.error(f'Analyser timed out for log file "{raw_url}"')
                     continue
                 except Exception as e:  # catch everything else
                     logger.error(f'Unhandled exception when analysing log: {repr(e)}')
