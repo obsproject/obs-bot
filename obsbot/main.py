@@ -95,7 +95,7 @@ class OBSBot(commands.Bot):
         return False
 
     async def on_command_error(self, context, exception):
-        """Swallow somwe errors we don't care about"""
+        """Swallow some errors we don't care about"""
         if isinstance(exception, commands.errors.CommandNotFound):
             return
         elif isinstance(exception, commands.errors.MissingRequiredArgument):

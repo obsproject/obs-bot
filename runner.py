@@ -17,7 +17,6 @@ logger = logging.getLogger('runner')
 @contextlib.contextmanager
 def setup_logging(logfile=None, debug=False):
     try:
-        max_bytes = 32 * 1024 * 1024  # 32 MiB
         logging.getLogger('discord').setLevel(logging.WARNING)
         logging.getLogger('discord.http').setLevel(logging.WARNING)
 
@@ -35,9 +34,9 @@ def setup_logging(logfile=None, debug=False):
         yield
     finally:
         handlers = log.handlers[:]
-        for hdlr in handlers:
-            hdlr.close()
-            log.removeHandler(hdlr)
+        for handler in handlers:
+            handler.close()
+            log.removeHandler(handler)
 
 
 if __name__ == '__main__':
