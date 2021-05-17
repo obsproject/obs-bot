@@ -1,2 +1,2 @@
-__version__ = '1.0.0'
-__codename__ = 'HODL'
+__version__ = '1.1.0'
+__codename__ = 'Group B'
