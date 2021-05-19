@@ -64,117 +64,118 @@ class LogAnalyser(Cog):
             if attachment.url.endswith('.txt'):
                 # collisions are possible here, but unlikely, we'll see if it becomes a problem
                 if not self.limiter.is_limited(attachment.filename):
-                    log_candidates.append((attachment.url, attachment.url))
+                    log_candidates.append(attachment.url)
                 else:
-                    logger.debug(f'{str(msg.author)} attempted to upload a rate-limited log.')
+                    logger.debug(f'{msg.author} attempted to upload a rate-limited log.')
 
         # links in message
         for part in [p.strip() for p in msg.content.split()]:
             if any(part.startswith(lh) for lh in self._log_hosts):
                 if 'obsproject.com' in part:
-                    raw_url = html_url = part
+                    url = part
                 elif 'hastebin.com' in part:
                     hastebin_id = part.rsplit('/', 1)[1]
                     if not hastebin_id:
                         continue
-                    raw_url = f'https://hastebin.com/raw/{hastebin_id}'
-                    html_url = f'https://hastebin.com/{hastebin_id}'
+                    url = f'https://hastebin.com/raw/{hastebin_id}'
                 elif 'pastebin.com' in part:
                     pastebin_id = part.rsplit('/', 1)[1]
                     if not pastebin_id:
                         continue
-                    raw_url = f'https://pastebin.com/raw/{pastebin_id}'
-                    html_url = f'https://pastebin.com/{pastebin_id}'
+                    url = f'https://pastebin.com/raw/{pastebin_id}'
                 else:
                     continue
 
-                if self.bot.is_supporter(msg.author) or not self.limiter.is_limited(raw_url):
-                    log_candidates.append((raw_url, html_url))
+                if self.bot.is_supporter(msg.author) or not self.limiter.is_limited(url):
+                    log_candidates.append(url)
                 else:
-                    logger.debug(f'{str(msg.author)} attempted to post a rate-limited log.')
+                    logger.debug(f'{msg.author} attempted to post a rate-limited log.')
 
         if not log_candidates:
             return
 
         if len(log_candidates) > 3:
-            logger.warning('There are too many possible log URLs, cutting down to 3...')
+            logger.debug('Too many log url candidates, limiting to first 3')
             log_candidates = log_candidates[:3]
 
+        for log_url in log_candidates:
+            # download log for local analysis
+            try:
+                log_content = await self.download_log(log_url)
+                break
+            except ValueError:  # not a valid OBS log
+                continue
+            except (ClientResponseError, TimeoutError):  # file download failed
+                logger.error(f'Failed retrieving log from "{log_url}"')
+            except Exception as e:  # catch everything else
+                logger.error(f'Unhandled exception when downloading log: {repr(e)}')
+        else:
+            return
+
         async with msg.channel.typing():
-            for raw_url, html_url in log_candidates:
-                # download log for local analysis
-                try:
-                    log_content = await self.download_log(raw_url)
-                except ValueError:  # not a valid OBS log
-                    continue
-                except ClientResponseError:  # file download failed
-                    logger.error(f'Failed retrieving log from "{raw_url}"')
-                    continue
-                except Exception as e:  # catch everything else
-                    logger.error(f'Unhandled exception when downloading log: {repr(e)}')
-                    continue
-
+            log_analysis = None
+            try:
                 # fetch log analysis from OBS analyser
-                try:
-                    log_analysis = await self.fetch_log_analysis(raw_url)
-                except ClientResponseError:  # file download failed
-                    logger.error(f'Failed retrieving log analysis from "{raw_url}"')
-                    continue
-                except TimeoutError: # analyser failed to respond
-                    logger.error(f'Analyser timed out for log file "{raw_url}"')
-                    continue
-                except Exception as e:  # catch everything else
-                    logger.error(f'Unhandled exception when analysing log: {repr(e)}')
-                    continue
+                log_analysis = await self.fetch_log_analysis(log_url)
+            except ValueError:
+                logger.error(f'Analyser result for "{log_url}" is invalid.')
+            except ClientResponseError:  # file download failed
+                logger.error(f'Failed retrieving log analysis from "{log_url}"')
+            except TimeoutError:  # analyser failed to respond
+                logger.error(f'Analyser timed out for log file "{log_url}"')
+            except Exception as e:  # catch everything else
+                logger.error(f'Unhandled exception when analysing log: {repr(e)}')
+            finally:
+                if not log_analysis:
+                    return
 
-                # check if analysis json is actually valid
-                if not all(i in log_analysis for i in ('critical', 'warning', 'info')):
-                    logger.error(f'Analyser result for "{raw_url}" is invalid.')
-                    continue
+            anal_url = f'https://obsproject.com/tools/analyzer?log_url={urlencode(log_url)}'
+            embed = Embed(colour=Colour(0x5a7474), url=anal_url)
 
-                anal_url = f'https://obsproject.com/tools/analyzer?log_url={urlencode(html_url)}'
-                embed = Embed(colour=Colour(0x5a7474), url=anal_url)
+            def pretty_print_messages(msgs):
+                ret = []
+                for _msg in msgs:
+                    ret.append(f'- {_msg}')
+                return '\n'.join(ret)
 
-                def pretty_print_messages(msgs):
-                    ret = []
-                    for _msg in msgs:
-                        ret.append(f'- {_msg}')
-                    return '\n'.join(ret)
+            if log_analysis['critical']:
+                embed.add_field(name="🛑 Critical",
+                                value=pretty_print_messages(log_analysis['critical']))
+            if log_analysis['warning']:
+                embed.add_field(name="⚠️ Warning",
+                                value=pretty_print_messages(log_analysis['warning']))
+            if log_analysis['info']:
+                embed.add_field(name="ℹ️ Info",
+                                value=pretty_print_messages(log_analysis['info']))
 
-                if log_analysis['critical']:
-                    embed.add_field(name="🛑 Critical",
-                                    value=pretty_print_messages(log_analysis['critical']))
-                if log_analysis['warning']:
-                    embed.add_field(name="⚠️ Warning",
-                                    value=pretty_print_messages(log_analysis['warning']))
-                if log_analysis['info']:
-                    embed.add_field(name="ℹ️ Info",
-                                    value=pretty_print_messages(log_analysis['info']))
+            # do local hardware check/stats collection and include results if enabled
+            hw_results = await self.match_hardware(log_content)
+            if self.bot.state.get('hw_check_enabled', False):
+                if hardware_check_msg := self.hardware_check(hw_results):
+                    embed.add_field(name='Hardware Check', inline=False,
+                                    value=' / '.join(hardware_check_msg))
 
-                # do local hardware check/stats collection and include results if enabled
-                hw_results = await self.match_hardware(log_content)
-                if self.bot.state.get('hw_check_enabled', False):
-                    if hardware_check_msg := self.hardware_check(hw_results):
-                        embed.add_field(name='Hardware Check', inline=False,
-                                        value=' / '.join(hardware_check_msg))
+            embed.add_field(name='Analyser Report', inline=False,
+                            value=f'[**Click here for solutions / full analysis**]({anal_url})')
 
-                embed.add_field(name='Analyser Report', inline=False,
-                                value=f'[**Click here for solutions / full analysis**]({anal_url})')
+            # include filtered log in case SE or FTL spam is detected
+            if 'obsproject.com' in log_url and any(elem in log_content for
+                                                   elem in self._filtered_log_needles):
+                clean_url = log_url.replace('obsproject.com', 'obsbot.rodney.io')
+                embed.description = f'*Log contains debug messages (browser/ftl/etc), ' \
+                                    f'for a filtered version [click here]({clean_url})*\n'
 
-                # include filtered log in case SE or FTL spam is detected
-                if 'obsproject.com' in raw_url and any(elem in log_content for
-                                                       elem in self._filtered_log_needles):
-                    clean_url = raw_url.replace('obsproject.com', 'obsbot.rodney.io')
-                    embed.description = f'*Log contains debug messages (browser/ftl/etc), ' \
-                                        f'for a filtered version [click here]({clean_url})*\n'
-
-                return await msg.channel.send(embed=embed, reference=msg, mention_author=True)
+            return await msg.channel.send(embed=embed, reference=msg, mention_author=True)
 
     async def fetch_log_analysis(self, url):
         async with self.bot.session.get('https://obsproject.com/analyzer-api/',
                                         params=dict(url=url, format='json')) as r:
             if r.status == 200:
-                return await r.json()
+                j = await r.json()
+                # check if analysis response is actually valid
+                if not all(i in j for i in ('critical', 'warning', 'info')):
+                    raise ValueError('Analyser result invalid')
+                return j
             else:
                 r.raise_for_status()
 
