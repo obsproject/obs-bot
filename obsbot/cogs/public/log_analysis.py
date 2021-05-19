@@ -20,6 +20,8 @@ _insert_query = '''INSERT INTO "{}" (gpu_id, cpu_id, name, counts) VALUES ($1, $
 class LogAnalyser(Cog):
     _analysis_colour = 0x5a7474
     _potato = '🥔'
+    _log_download_failed = '❗️'
+    _log_analyser_failed = '❌'
 
     _filtered_log_needles = ('obs-streamelements.dll', 'ftl_stream_create')
     _log_hosts = ('https://obsproject.com/logs/', 'https://hastebin.com/', 'https://pastebin.com/')
@@ -98,6 +100,12 @@ class LogAnalyser(Cog):
             logger.debug('Too many log url candidates, limiting to first 3')
             log_candidates = log_candidates[:3]
 
+        async def react(emote):
+            try:
+                await msg.add_reaction(emote)
+            except Exception as e:
+                logger.warning(f'Adding reaction failed with "{repr(e)}')
+
         for log_url in log_candidates:
             # download log for local analysis
             try:
@@ -107,6 +115,7 @@ class LogAnalyser(Cog):
                 continue
             except (ClientResponseError, TimeoutError):  # file download failed
                 logger.error(f'Failed retrieving log from "{log_url}"')
+                await react(self._log_download_failed)
             except Exception as e:  # catch everything else
                 logger.error(f'Unhandled exception when downloading log: {repr(e)}')
         else:
@@ -127,7 +136,7 @@ class LogAnalyser(Cog):
                 logger.error(f'Unhandled exception when analysing log: {repr(e)}')
             finally:
                 if not log_analysis:
-                    return
+                    return await react(self._log_analyser_failed)
 
             anal_url = f'https://obsproject.com/tools/analyzer?log_url={urlencode(log_url)}'
             embed = Embed(colour=Colour(0x5a7474), url=anal_url)
