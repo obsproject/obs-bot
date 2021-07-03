@@ -8,6 +8,8 @@ from aiohttp import ClientResponseError
 from asyncio import TimeoutError
 from discord import Message, Embed, Colour
 from discord.ext.commands import Cog, command, Context
+from discord_slash.utils.manage_components import create_button, create_actionrow
+from discord_slash.model import ButtonStyle
 
 from .utils.ratelimit import RateLimiter
 
@@ -164,9 +166,6 @@ class LogAnalyser(Cog):
                     embed.add_field(name='Hardware Check', inline=False,
                                     value=' / '.join(hardware_check_msg))
 
-            embed.add_field(name='Analyser Report', inline=False,
-                            value=f'[**Click here for solutions / full analysis**]({anal_url})')
-
             # include filtered log in case SE or FTL spam is detected
             if 'obsproject.com' in log_url and any(elem in log_content for
                                                    elem in self._filtered_log_needles):
@@ -174,7 +173,10 @@ class LogAnalyser(Cog):
                 embed.description = f'*Log contains debug messages (browser/ftl/etc), ' \
                                     f'for a filtered version [click here]({clean_url})*\n'
 
-            return await msg.channel.send(embed=embed, reference=msg, mention_author=True)
+            actions = create_actionrow(create_button(style=ButtonStyle.URL, url=anal_url,
+                                                     label=f'Solutions / Full Analysis'))
+
+            return await msg.channel.send(embed=embed, reference=msg, mention_author=True, components=[actions])
 
     async def fetch_log_analysis(self, url):
         async with self.bot.session.get('https://obsproject.com/analyzer-api/',
