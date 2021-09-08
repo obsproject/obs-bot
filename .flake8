@@ -1,0 +1,5 @@
+[flake8]
+ignore = E741,C901
+exclude = scripts,obsbot/cogs/private
+max-complexity = 10
+max-line-length = 120
