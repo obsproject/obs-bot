@@ -92,7 +92,7 @@ class Cron(commands.Cog):
     async def twitter(self):
         _user_id = self.config['twitter']['account_id']
         _user_name = self.config['twitter']['screen_name']
-        
+
         tweets = await self.twitter_client.api.statuses.user_timeline.get(
             screen_name=_user_name.lower(), _timeout=1, count=100, trim_user=True,
             since_id=self.bot.state['twitter_last_id']

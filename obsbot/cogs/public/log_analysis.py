@@ -174,7 +174,7 @@ class LogAnalyser(Cog):
                                     f'for a filtered version [click here]({clean_url})*\n'
 
             actions = create_actionrow(create_button(style=ButtonStyle.URL, url=anal_url,
-                                                     label=f'Solutions / Full Analysis'))
+                                                     label='Solutions / Full Analysis'))
 
             return await msg.channel.send(embed=embed, reference=msg, mention_author=True, components=[actions])
 

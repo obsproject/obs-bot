@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import *
+from typing import Union, List
 
 import asyncpg
 

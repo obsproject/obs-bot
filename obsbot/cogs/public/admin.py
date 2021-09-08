@@ -62,7 +62,7 @@ class Admin(Cog):
                                    f'Aliases:  {len(fac.alias_map)}\n'
                                    f'Total uses:  {total_uses} (since 2018-06-07)'))
 
-        if cron := self.bot.get_cog('Cron'):
+        if _ := self.bot.get_cog('Cron'):
             embed.add_field(name='Cron module', inline=False,
                             value=f'Last Fider ID: {self.bot.state["fider_last_id"]}\n'
                                   f'Last Twitter ID: {self.bot.state["twitter_last_id"]}')

@@ -1,6 +1,6 @@
 import logging
 
-from discord import Message, Embed, Member, User
+from discord import Message, Embed, Member
 from discord.ext.commands import Cog, command, Context
 from discord_slash import SlashContext
 
