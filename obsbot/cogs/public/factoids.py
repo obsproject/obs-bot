@@ -134,7 +134,7 @@ class Factoids(Cog):
         # ignore our own messages
         if msg.author == self.bot.user:
             return
-        if not msg.content or msg.content[0] != '!':
+        if not msg.content or len(msg.content) < 2 or msg.content[0] != '!':
             return
         msg_parts = msg.content[1:].split()
 
