@@ -65,3 +65,8 @@ hw_check_enabled = true
 db_table = "hardware_stats"
 channel_blacklist = [12345678909876654321]
 cooldown = 5.0
+
+[onlybans]
+enabled = true
+db_table = "filters"
+log_channel = 12345678909876654321

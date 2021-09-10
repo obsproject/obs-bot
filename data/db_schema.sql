@@ -26,3 +26,11 @@ CREATE TABLE "commit_messages"
     message_id numeric NOT NULL
 );
 
+CREATE TABLE "filters"
+(
+    id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "name" text NOT NULL,
+    "regex" text NOT NULL,
+    "bannable" bool DEFAULT false,
+    "kickable" bool DEFAULT false
+);
