@@ -1,4 +1,6 @@
+import math
 import re
+import time
 import logging
 
 from discord import Message, Embed
@@ -18,14 +20,24 @@ class OnlyBans(Cog):
         self.bannable = set()
         self.kickable = set()
 
-        if not self.bot.state.get('mod_deletes'):
+        if self.bot.state.get('mod_deletes') is None:
             self.bot.state['mod_deletes'] = 0
-        if not self.bot.state.get('mod_faster'):
+        if self.bot.state.get('mod_faster') is None:
             self.bot.state['mod_faster'] = 0
-        if not self.bot.state.get('mod_bans'):
+        if self.bot.state.get('mod_bans') is None:
             self.bot.state['mod_bans'] = 0
-        if not self.bot.state.get('mod_kicks'):
+        if self.bot.state.get('mod_kicks') is None:
             self.bot.state['mod_kicks'] = 0
+
+        # timestamps for stats
+        if self.bot.state.get('mod_falsepositive_ts') is None:
+            self.bot.state['mod_falsepositive_ts'] = 0
+        if self.bot.state.get('mod_first_ban') is None:
+            self.bot.state['mod_first_ban'] = 0
+        if self.bot.state.get('mod_first_kick') is None:
+            self.bot.state['mod_first_kick'] = 0
+        if self.bot.state.get('mod_first_delete') is None:
+            self.bot.state['mod_first_delete'] = 0
 
         if admin := self.bot.get_cog('Admin'):
             admin.add_help_section('Moderation', [
@@ -37,6 +49,7 @@ class OnlyBans(Cog):
                 ('.testfilters <message>', 'Test if message gets caught by any filter'),
                 ('.togglefiltering', 'Enable/Disable filtering'),
                 ('.filterstats', 'Print some stats'),
+                ('.resettheclock', 'Reset days since last false-positive to 0'),
             ], restricted=True)
 
     async def fetch_filters(self):
@@ -213,14 +226,35 @@ class OnlyBans(Cog):
         if not self.bot.is_private(ctx.channel):
             return
 
+        time_now = time.time()
+        ban_delta = time_now - self.bot.state['mod_first_ban']
+        kick_delta = time_now - self.bot.state['mod_first_kick']
+        delete_delta = time_now - self.bot.state['mod_first_delete']
+
+        bans_per_day = self.bot.state["mod_bans"] / (ban_delta / 86400)
+        kicks_per_day = self.bot.state["mod_kicks"] / (kick_delta / 86400)
+        deletes_per_day = self.bot.state["mod_deletes"] / (delete_delta / 86400)
+
+        days_since_fp = math.floor((time_now - self.bot.state['mod_falsepositive_ts']) / 86400)
+
         message = [
-            f'- Total deletions: {self.bot.state["mod_deletes"]}',
-            f'- Total kicks: {self.bot.state["mod_kicks"]}',
-            f'- Total bans: {self.bot.state["mod_bans"]}',
+            f'- Total deletions: {self.bot.state["mod_deletes"]} ({deletes_per_day:.02f} per day)',
+            f'- Total kicks: {self.bot.state["mod_kicks"]} ({kicks_per_day:.02f} per day)',
+            f'- Total bans: {self.bot.state["mod_bans"]} ({bans_per_day:.02f} per day)',
             f'- Times faster than Dyno: {self.bot.state["mod_faster"]}',
-            '- Days since last false-positive: 0'
+            f'- Days since last false-positive: {days_since_fp:d}'
         ]
         return await ctx.send('\n'.join(message))
+
+    @command()
+    async def resettheclock(self, ctx: Context):
+        if not self.bot.is_admin(ctx.author):
+            return
+        if not self.bot.is_private(ctx.channel):
+            return
+
+        self.bot.state['mod_falsepositive_ts'] = time.time()
+        return ctx.send('Days since false positive reset to 0.')
 
     @Cog.listener()
     async def on_message(self, msg: Message):
@@ -249,6 +283,8 @@ class OnlyBans(Cog):
             deleted = f'No, failed with error: {e!r}'
         finally:
             self.bot.state['mod_deletes'] += 1
+            if not self.bot.state['mod_first_delete']:
+                self.bot.state['mod_first_delete'] = time.time()
 
         embed = Embed(colour=0xC90000,  # title='Message Filter Match',
                       description=f'**Message by** {msg.author.mention} **in** '
@@ -262,18 +298,21 @@ class OnlyBans(Cog):
 
         if name in self.bannable:
             try:
-                await msg.author.ban(delete_message_days=1, reason=f'Regex rule "{name}" matched.')
+                await msg.author.ban(delete_message_days=1, reason=f'Filter rule "{name}" matched.')
                 embed.add_field(name='User banned?', value='Yes')
                 self.bot.state['mod_bans'] += 1
+                if not self.bot.state['mod_first_ban']:
+                    self.bot.state['mod_first_ban'] = time.time()
             except Exception as e:
                 logger.warning(f'Banning user {msg.author} failed: {e!r}')
                 embed.add_field(name='User banned?', value=f'No, failed with error: {e!r}')
-
-        if name in self.kickable:
+        elif name in self.kickable:
             try:
-                await msg.author.kick(reason=f'Regex rule "{name}" matched.')
+                await msg.author.kick(reason=f'Filter rule "{name}" matched.')
                 embed.add_field(name='User kicked?', value='Yes')
                 self.bot.state['mod_kicks'] += 1
+                if not self.bot.state['mod_first_kick']:
+                    self.bot.state['mod_first_kick'] = time.time()
             except Exception as e:
                 logger.warning(f'Banning user {msg.author} failed: {e!r}')
                 embed.add_field(name='User kicked?', value=f'No, failed with error: {e!r}')
