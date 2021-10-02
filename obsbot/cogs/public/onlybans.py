@@ -34,9 +34,9 @@ class OnlyBans(Cog):
                 ('.modfilter "<name>" `<regex>`', 'Update regex of filter'),
                 ('.delfilter "<name>"', 'Delete filter'),
                 ('.setpunishment "<name>" [none/kick/ban]', 'sets additional violation action (default: none)'),
-                ('.testfilter <message>', 'Test if message gets caught by any filter'),
+                ('.testfilters <message>', 'Test if message gets caught by any filter'),
                 ('.togglefiltering', 'Enable/Disable filtering'),
-                ('.killcount', 'Print some stats'),
+                ('.filterstats', 'Print some stats'),
             ], restricted=True)
 
     async def fetch_filters(self):
@@ -184,8 +184,8 @@ class OnlyBans(Cog):
         self.filtering_enabled = not self.filtering_enabled
         await ctx.send('Filtering {}.'.format('enabled' if self.filtering_enabled else 'disabled'))
 
-    @command()
-    async def testfilter(self, ctx: Context, *, message: str):
+    @command(aliases=['testfilter'])
+    async def testfilters(self, ctx: Context, *, message: str):
         if not self.bot.is_admin(ctx.author):
             return
         if not self.bot.is_private(ctx.channel):
@@ -206,8 +206,8 @@ class OnlyBans(Cog):
 
         return await ctx.send('\n'.join(message))
 
-    @command()
-    async def killcount(self, ctx: Context):
+    @command(aliases=['killcount'])
+    async def filterstats(self, ctx: Context):
         if not self.bot.is_admin(ctx.author):
             return
         if not self.bot.is_private(ctx.channel):
