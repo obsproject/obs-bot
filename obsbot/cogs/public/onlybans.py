@@ -82,13 +82,27 @@ class OnlyBans(Cog):
         if not self.bot.is_private(ctx.channel):
             return
 
-        _list = ['##. name - regex']
-        for num, (name, regex) in enumerate(sorted(self.filters.items()), start=1):
-            _list.append(f'{num: 2d}. "{name}" - `{regex.pattern}`')
+        _ban_filters = []
+        _kick_filters = []
+        _delete_filters = []
+        for name, regex in sorted(self.filters.items()):
+            if name in self.bannable:
+                _ban_filters.append(f'* "{name}" - `{regex.pattern}`')
+            elif name in self.kickable:
+                _kick_filters.append(f'* "{name}" - `{regex.pattern}`')
+            else:
+                _delete_filters.append(f'* "{name}" - `{regex.pattern}`')
 
-        list_str = '\n'.join(_list)
-        embed = Embed(title='Registered message filters',
-                      description=f'```\n{list_str}\n```')
+        embed = Embed(title='Registered Message Filters')
+        if _ban_filters:
+            embed.add_field(name='Ban Filters', inline=False,
+                            value='```\n{}\n```'.format('\n'.join(_ban_filters)))
+        if _kick_filters:
+            embed.add_field(name='Kick Filters', inline=False,
+                            value='```\n{}\n```'.format('\n'.join(_kick_filters)))
+        if _delete_filters:
+            embed.add_field(name='Delete Filters', inline=False,
+                            value='```\n{}\n```'.format('\n'.join(_delete_filters)))
 
         return await ctx.send(embed=embed)
 
