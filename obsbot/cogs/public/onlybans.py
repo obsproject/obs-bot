@@ -1,7 +1,7 @@
+import logging
 import math
 import re
 import time
-import logging
 
 from discord import Message, Embed
 from discord.ext.commands import Cog, Context, command
@@ -19,6 +19,7 @@ class OnlyBans(Cog):
         self.filters = dict()
         self.bannable = set()
         self.kickable = set()
+        self.sorted_filters = []
 
         if self.bot.state.get('mod_deletes') is None:
             self.bot.state['mod_deletes'] = 0
@@ -52,6 +53,11 @@ class OnlyBans(Cog):
                 ('.resettheclock', 'Reset days since last false-positive to 0'),
             ], restricted=True)
 
+    def sort_filters(self):
+        self.sorted_filters = sorted(self.filters.items(), reverse=True,
+                                     key=lambda a: (a[0] in self.bannable) * 2 + (a[0] in self.kickable))
+        logger.info(f'Presorted {len(self.sorted_filters)} filters.')
+
     async def fetch_filters(self):
         # fetch existing filters from DB
         rows = await self.bot.db.query(f'SELECT * FROM "{self.config["db_table"]}"')
@@ -68,6 +74,7 @@ class OnlyBans(Cog):
             except re.error as e:
                 logger.error(f'Compiling filter "{row["name"]}" failed with: {e}')
         logger.info(f'Fetched {len(self.filters)} filters from database.')
+        self.sort_filters()
         # wait for bot to be fully online before trying to find modlog channel
         await self.bot.wait_until_ready()
         # find channel
@@ -120,6 +127,7 @@ class OnlyBans(Cog):
 
         try:
             self.filters[name] = re.compile(regex, re.IGNORECASE | re.DOTALL)
+            self.sort_filters()
         except re.error as e:
             return await ctx.send(f'Compiling regex failed: {e}')
 
@@ -141,6 +149,7 @@ class OnlyBans(Cog):
 
         try:
             self.filters[name] = re.compile(regex, re.IGNORECASE | re.DOTALL)
+            self.sort_filters()
         except re.error as e:
             return await ctx.send(f'Compiling regex failed: {e}')
 
@@ -159,6 +168,7 @@ class OnlyBans(Cog):
             return await ctx.send(f'No filter named "{name}" exists.')
         else:
             regex = self.filters.pop(name)
+            self.sort_filters()
 
         await self.bot.db.exec(f'''DELETE FROM "{self.config["db_table"]}" WHERE "name"=$1''', name)
         return await ctx.send(f'Removed filter `{name}` (regex: `{regex.pattern}`).')
@@ -192,14 +202,17 @@ class OnlyBans(Cog):
         await self.bot.db.exec(
             f'''UPDATE "{self.config["db_table"]}" SET "bannable"=$1, "kickable"=$2 WHERE "name"=$3''',
             ban, kick, name)
+
         if ban:
             self.bannable.add(name)
-            return await ctx.send(f'Filter `{name}` has been set to ban on match.')
+            await ctx.send(f'Filter `{name}` has been set to ban on match.')
         elif kick:
             self.kickable.add(name)
-            return await ctx.send(f'Filter `{name}` has been set to kick on match.')
+            await ctx.send(f'Filter `{name}` has been set to kick on match.')
         else:
-            return await ctx.send(f'Filter `{name}` has been set to delete only.')
+            await ctx.send(f'Filter `{name}` has been set to delete only.')
+
+        self.sort_filters()
 
     @command()
     async def togglefiltering(self, ctx: Context):
@@ -219,7 +232,7 @@ class OnlyBans(Cog):
             return
 
         matches = []
-        for name, regex in self.filters.items():
+        for name, regex in self.sorted_filters:
             m = regex.search(message)
             if m:
                 matches.append((name, regex.pattern, m.group()))
@@ -281,8 +294,7 @@ class OnlyBans(Cog):
             return
 
         # go through bannable rules first, then kickable, then just delete
-        for name, regex in sorted(self.filters.items(), reverse=True,
-                                  key=lambda a: (a[0] in self.bannable) * 2 + (a[0] in self.kickable)):
+        for name, regex in self.sorted_filters:
             m = regex.search(msg.content)
             if m:
                 break
