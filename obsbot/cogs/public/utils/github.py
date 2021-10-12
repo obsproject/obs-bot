@@ -18,6 +18,7 @@ class GitHubHelper:
     _ci_failed_colour = 0xd0021b
     _ci_some_failed_colour = 0xF5A623
     _ci_passed_colour = 0x7ED321
+    _wiki_colour = 0xf8c8dc
 
     def __init__(self, session, config, state):
         self.session = session
@@ -174,6 +175,23 @@ class GitHubHelper:
             embed.description = event_body['discussion']['body']
 
         return brief_embed, embed
+
+    async def get_wiki_message(self, event_body):
+        embed = Embed(colour=Colour(self._wiki_colour))
+        embed.set_footer(text='Wiki')
+        # All edits in the response are from a single author
+        author_name = event_body['sender']['login']
+        author = await self.get_author_info(author_name)
+        if author and author['name'] and author['name'] != author['login']:
+            author_name = f'{author["name"]} ({author["login"]})'
+        embed.set_author(name=author_name, url=event_body['sender']['html_url'],
+                         icon_url=event_body['sender']['avatar_url'])
+
+        body = []
+        for page in event_body['pages']:
+            body.append(f'**{page["action"]}:** [{page["title"]}]({page["html_url"]}/{page["sha"]})')
+        embed.description = '\n'.join(body)
+        return embed
 
     async def get_ci_results(self, event_body):
         check_suite_id = event_body['check_suite']['id']
