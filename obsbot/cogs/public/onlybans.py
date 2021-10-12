@@ -332,6 +332,8 @@ class OnlyBans(Cog):
             except Exception as e:
                 logger.warning(f'Banning user {msg.author} failed: {e!r}')
                 embed.add_field(name='User banned?', value=f'No, failed with error: {e!r}')
+            else:
+                logger.info(f'Banned user {msg.author.id}; Message {msg.id} matched filter "{name}"')
         elif name in self.kickable:
             try:
                 await msg.author.kick(reason=f'Filter rule "{name}" matched.')
@@ -342,6 +344,10 @@ class OnlyBans(Cog):
             except Exception as e:
                 logger.warning(f'Banning user {msg.author} failed: {e!r}')
                 embed.add_field(name='User kicked?', value=f'No, failed with error: {e!r}')
+            else:
+                logger.info(f'Kicked user {msg.author.id}; Message {msg.id} matched filter "{name}"')
+        else:
+            logger.info(f'Deleted message by {msg.author.id}; Message {msg.id} matched filter "{name}"')
 
         return await self.log_channel.send(embed=embed)
 
