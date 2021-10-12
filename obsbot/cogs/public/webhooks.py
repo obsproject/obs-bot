@@ -109,6 +109,10 @@ class Webhooks(Cog):
                 brief, full = await self.gh_helper.get_discussion_messages(body)
                 await self.brief_channel.send(embed=brief)
                 await self.commits_channel.send(embed=full)
+        elif event == 'gollum':  # Wiki updates are "gollum" for some reason.
+            embed = await self.gh_helper.get_wiki_message(body)
+            await self.brief_channel.send(embed=embed)
+            await self.commits_channel.send(embed=embed)
         else:
             logger.debug(f'Unhandled github event: {event}')
 
