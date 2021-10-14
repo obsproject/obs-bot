@@ -280,8 +280,16 @@ class OnlyBans(Cog):
         if not self.bot.is_private(ctx.channel):
             return
 
-        self.bot.state['mod_falsepositive_ts'] = time.time()
-        return ctx.send('Days since false positive reset to 0.')
+        last_fp = self.bot.state['mod_falsepositive_ts']
+        now = time.time()
+
+        delta = now - last_fp
+        delta_hours = delta // 3600
+        delta_days = delta_hours // 24
+        delta_hours = delta_hours % 24
+
+        self.bot.state['mod_falsepositive_ts'] = now
+        await ctx.send(f'Clock was reset after {delta_days:.0f} days {delta_hours:.0f} hours.')
 
     @Cog.listener()
     async def on_message(self, msg: Message):
