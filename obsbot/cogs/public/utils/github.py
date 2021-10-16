@@ -178,7 +178,7 @@ class GitHubHelper:
 
     async def get_wiki_message(self, event_body):
         embed = Embed(colour=Colour(self._wiki_colour))
-        embed.set_footer(text='Wiki')
+        embed.set_footer(text='GitHub Wiki Changes')
         # All edits in the response are from a single author
         author_name = event_body['sender']['login']
         author = await self.get_author_info(author_name)
@@ -186,10 +186,11 @@ class GitHubHelper:
             author_name = f'{author["name"]} ({author["login"]})'
         embed.set_author(name=author_name, url=event_body['sender']['html_url'],
                          icon_url=event_body['sender']['avatar_url'])
-
         body = []
         for page in event_body['pages']:
-            body.append(f'**{page["action"]}:** [{page["title"]}]({page["html_url"]}/{page["sha"]})')
+            diff_url = f'{page["html_url"]}/_compare/{page["sha"]}^...{page["sha"]}'
+            page_url = f'{page["html_url"]}/{page["sha"]}'
+            body.append(f'**{page["action"]}:** [{page["title"]}]({page_url}) [[diff]({diff_url})]')
         embed.description = '\n'.join(body)
         return embed
 
