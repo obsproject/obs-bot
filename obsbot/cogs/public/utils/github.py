@@ -190,7 +190,7 @@ class GitHubHelper:
         for page in event_body['pages']:
             diff_url = f'{page["html_url"]}/_compare/{page["sha"]}^...{page["sha"]}'
             page_url = f'{page["html_url"]}/{page["sha"]}'
-            body.append(f'**{page["action"]}:** [{page["title"]}]({page_url}) [[diff]({diff_url})]')
+            body.append(f'**{page["action"]}:** [{page["title"]}]({page_url}) [[diff]]({diff_url})')
         embed.description = '\n'.join(body)
         return embed
 
