@@ -120,6 +120,9 @@ class Webhooks(Cog):
 
     async def fetch_github_ci_results(self, wh_body):
         result = await self.gh_helper.get_ci_results(wh_body)
+        if not result:
+            return
+
         build_success, embed, update_info = result
         # only post build result if build failed or status changed (e.g. success->failed)
         if not build_success or (self.bot.state.get('ci_last_result', False) != build_success):
