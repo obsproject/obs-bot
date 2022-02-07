@@ -22,6 +22,7 @@ ci_channels = [12345678909876654321, 12345678909876654321]
 [webhooks.github]
 commits_channel = 12345678909876654321
 brief_commits_channel = 12345678909876654321
+wiki_channel = 12345678909876654321
 db_table = "commit_messages"
 github_api_auth = "token <token>"
 commit_truncation_limit = 2

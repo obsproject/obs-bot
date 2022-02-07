@@ -22,6 +22,7 @@ class Webhooks(Cog):
         self.commits_channel = None
         self.brief_channel = None
         self.ci_channels = None
+        self.wiki_channel = None
 
         self.gh_helper = GitHubHelper(bot.session, config['github'], self.bot.state)
 
@@ -38,6 +39,7 @@ class Webhooks(Cog):
         await self.bot.wait_until_ready()
         self.commits_channel = self.bot.get_channel(self.config['github']['commits_channel'])
         self.brief_channel = self.bot.get_channel(self.config['github']['brief_commits_channel'])
+        self.wiki_channel = self.bot.get_channel(self.config['github']['wiki_channel'])
         self.ci_channels = []
         for cid in self.config['ci_channels']:
             self.ci_channels.append(self.bot.get_channel(cid))
@@ -111,8 +113,7 @@ class Webhooks(Cog):
                 await self.commits_channel.send(embed=full)
         elif event == 'gollum':  # Wiki updates are "gollum" for some reason.
             embed = await self.gh_helper.get_wiki_message(body)
-            await self.brief_channel.send(embed=embed)
-            await self.commits_channel.send(embed=embed)
+            await self.wiki_channel.send(embed=embed)
         else:
             logger.debug(f'Unhandled github event: {event}')
 
