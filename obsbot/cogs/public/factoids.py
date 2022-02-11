@@ -71,7 +71,7 @@ class Factoids(Cog):
                                        f'ORDER BY "uses" DESC LIMIT {self.config["slash_command_limit"]}')
         # some simple set maths to get new/old/current commands
         commands = set(r['name'] for r in rows)
-        old_commands = set(self.bot.slash.commands.keys())
+        old_commands = set(self.bot.slash.commands.keys()) - {'context'}
         new_commands = commands - old_commands
         old_commands -= commands
 
