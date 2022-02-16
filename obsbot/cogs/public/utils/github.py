@@ -31,7 +31,7 @@ class GitHubHelper:
 
     async def get_commit_messages(self, event_body, brief=False):
         embed_commits = []
-        branch = event_body['ref'].rpartition('/')[2]
+        branch = event_body['ref'].split('/', 2)[2]
         project = event_body['repository']['full_name']
         commits = event_body['commits']
 
