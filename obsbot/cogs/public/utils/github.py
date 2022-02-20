@@ -54,7 +54,7 @@ class GitHubHelper:
 
             if len(commit_message) > 2 and not brief:
                 commit_body = '\n'.join(commit_message[2:])
-                embed.description = commit_body
+                embed.description = commit_body[:4096]
 
             author = await self.get_author_info(author_username)
 
