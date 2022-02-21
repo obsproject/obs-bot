@@ -3,7 +3,7 @@ import logging
 import time
 
 import dateutil.parser
-from discord import Embed, Colour
+from disnake import Embed, Colour
 
 logger = logging.getLogger(__name__)
 
