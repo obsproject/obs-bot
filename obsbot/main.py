@@ -102,15 +102,17 @@ class OBSBot(commands.Bot):
         raise exception
 
     async def on_message(self, message):
-        if not isinstance(message.channel, discord.DMChannel):
-            return
-        if message.author == self.user or self.is_supporter(message.author):
-            return
-        if message.content.startswith('.') or message.content.startswith('!'):
-            return
-
-        await message.channel.send('DMs are not monitored, please use the support channels '
-                                   'in discord.gg/obsproject instead.')
+        if (
+                isinstance(message.channel, discord.DMChannel)
+                and not message.author.bot
+                and not message.content.startswith('.')
+                and not message.content.startswith('!')
+                and not self.is_supporter(message.author)
+        ):
+            await message.channel.send('DMs are not monitored, please use the support '
+                                       'channels in discord.gg/obsproject instead.')
+        else:
+            await self.process_commands(message)
 
     async def close(self):
         logger.info('Cleaning up on close()...')
