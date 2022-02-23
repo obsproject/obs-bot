@@ -186,6 +186,8 @@ class GitHubHelper:
             author_name = f'{author["name"]} ({author["login"]})'
         embed.set_author(name=author_name, url=event_body['sender']['html_url'],
                          icon_url=event_body['sender']['avatar_url'])
+        embed.add_field(name='Repository', value=event_body['repository']['full_name'])
+
         body = []
         for page in event_body['pages']:
             diff_url = f'{page["html_url"]}/_compare/{page["sha"]}^...{page["sha"]}'
