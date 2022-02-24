@@ -20,7 +20,7 @@ class OBSBot(commands.Bot):
     def __init__(self, config_file):
         intents = disnake.Intents(bans=True, emojis=True, guilds=True, members=True,
                                   messages=True, reactions=True, voice_states=False)
-        super().__init__(command_prefix='.', help_command=None, intents=intents)
+        super().__init__(command_prefix='.', help_command=None, intents=intents)  # type: ignore
 
         self.config = toml.load(open(config_file))
         self.state = StateFile(self.config['bot']['state_file'])
