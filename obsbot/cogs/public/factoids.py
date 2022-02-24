@@ -1,8 +1,7 @@
 import logging
 
-from discord import Message, Embed, Member
-from discord.ext.commands import Cog, command, Context
-from discord_slash import SlashContext
+from disnake import Message, Embed, Member, ApplicationCommandInteraction
+from disnake.ext.commands import Cog, command, Context, InvokableSlashCommand
 
 from .utils.ratelimit import RateLimiter
 
@@ -71,27 +70,29 @@ class Factoids(Cog):
                                        f'ORDER BY "uses" DESC LIMIT {self.config["slash_command_limit"]}')
         # some simple set maths to get new/old/current commands
         commands = set(r['name'] for r in rows)
-        old_commands = set(self.bot.slash.commands.keys()) - {'context'}
+        old_commands = self.bot.slash_commands
         new_commands = commands - old_commands
         old_commands -= commands
 
         for factoid in new_commands:
             logger.info(f'Adding slash command for "{factoid}"')
-            self.bot.slash.add_slash_command(self.slash_factoid, name=factoid,
-                                             description=f'Sends "{factoid}" factoid',
-                                             guild_ids=[self.bot.config['bot']['main_guild']],
-                                             options=[dict(type=6, name='mention',
-                                                           description='User(s) to mention',
-                                                           required=False)])
+            self.bot.add_slash_command(
+                InvokableSlashCommand(
+                    self.slash_factoid,
+                    name=factoid,
+                    description=f'Sends "{factoid}" factoid',
+                    guild_ids=[self.bot.config['bot']['main_guild']]
+                )
+            )
 
         # Delete commands that are now obsolete
         for obsolete in old_commands:
             logger.info(f'Removing slash command "{obsolete}"')
-            self.bot.slash.commands.pop(obsolete, None)
+            self.bot.remove_slash_command(obsolete)
 
         # sync commands with discord API (only run if commands have already been registered)
         if new_commands or new_commands or not self.initial_commands_sync_done:
-            self.bot.loop.create_task(self.bot.slash.sync_all_commands())
+            self.bot._schedule_delayed_command_sync()
 
         self.initial_commands_sync_done = True
 
@@ -108,21 +109,21 @@ class Factoids(Cog):
             factoid_message = factoid_message.replace(variable, value)
         return factoid_message
 
-    async def slash_factoid(self, ctx: SlashContext, mention: Member = None):
-        if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.command_id, ctx.channel_id):
-            logger.debug(f'rate-limited (sc): "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.name}"')
+    async def slash_factoid(self, ctx: ApplicationCommandInteraction, mention: Member = None):
+        if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.data.id, ctx.channel_id):
+            logger.debug(f'rate-limited (sc): "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.data.name}"')
             return
 
-        logger.info(f'factoid requested (sc) by: "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.name}"')
-        await self.increment_uses(ctx.name)
-        message = self.resolve_variables(self.factoids[ctx.name]['message'])
+        logger.info(f'factoid requested (sc) by: "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.data.name}"')
+        await self.increment_uses(ctx.data.name)
+        message = self.resolve_variables(self.factoids[ctx.data.name]['message'])
 
         embed = None
-        if self.factoids[ctx.name]['embed']:
+        if self.factoids[ctx.data.name]['embed']:
             embed = Embed(colour=self._factoids_colour, description=message)
             message = ''
-            if self.factoids[ctx.name]['image_url']:
-                embed.set_image(url=self.factoids[ctx.name]['image_url'])
+            if self.factoids[ctx.data.name]['image_url']:
+                embed.set_image(url=self.factoids[ctx.data.name]['image_url'])
 
         if mention and isinstance(mention, Member):
             return await ctx.send(content=f'{mention.mention} {message}', embed=embed)
@@ -176,7 +177,14 @@ class Factoids(Cog):
         elif user_mention:
             return await msg.channel.send(f'{user_mention} {message}')
         else:
-            return await msg.channel.send(message, embed=embed, reference=msg.reference, mention_author=True)
+            msg_reference = msg.reference
+            # If reference is a message from a bot, try resolving the referenced message's reference
+            if msg_reference and msg.reference.resolved.author.bot and (ref := msg.reference.resolved.reference):
+                msg_reference = ref
+
+            return await msg.channel.send(message, embed=embed,  # type: ignore
+                                          reference=msg_reference,
+                                          mention_author=True)
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(

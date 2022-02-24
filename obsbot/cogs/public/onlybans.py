@@ -3,8 +3,8 @@ import math
 import re
 import time
 
-from discord import Message, Embed
-from discord.ext.commands import Cog, Context, command
+from disnake import Message, Embed
+from disnake.ext.commands import Cog, Context, command
 
 logger = logging.getLogger(__name__)
 

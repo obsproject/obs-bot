@@ -1,8 +1,8 @@
 import logging
 import time
 
-from discord import Embed, Game, Activity, ActivityType
-from discord.ext.commands import Cog, command, Context
+from disnake import Embed, Game, Activity, ActivityType
+from disnake.ext.commands import Cog, command, Context
 
 from obsbot import __version__, __codename__
 

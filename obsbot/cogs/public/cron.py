@@ -2,8 +2,8 @@ import logging
 
 import dateutil.parser
 
-from discord import Embed, Colour
-from discord.ext import commands, tasks
+from disnake import Embed, Colour
+from disnake.ext import commands, tasks
 from peony import PeonyClient
 from peony.exceptions import PeonyException
 

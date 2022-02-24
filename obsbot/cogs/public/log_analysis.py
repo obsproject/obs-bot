@@ -2,14 +2,14 @@ import logging
 import json
 import random
 
+from asyncio import TimeoutError
 from urllib.parse import quote_plus as urlencode
 
 from aiohttp import ClientResponseError
-from asyncio import TimeoutError
-from discord import Message, Embed, Colour
-from discord.ext.commands import Cog, command, Context
-from discord_slash.utils.manage_components import create_button, create_actionrow
-from discord_slash.model import ButtonStyle
+from disnake import Message, Embed, Colour
+from disnake.enums import ButtonStyle
+from disnake.ext.commands import Cog, command, Context
+from disnake.ui.action_row import ActionRow
 
 from .utils.ratelimit import RateLimiter
 
@@ -173,10 +173,9 @@ class LogAnalyser(Cog):
                 embed.description = f'*Log contains debug messages (browser/ftl/etc), ' \
                                     f'for a filtered version [click here]({clean_url})*\n'
 
-            actions = create_actionrow(create_button(style=ButtonStyle.URL, url=anal_url,
-                                                     label='Solutions / Full Analysis'))
-
-            return await msg.channel.send(embed=embed, reference=msg, mention_author=True, components=[actions])
+            row = ActionRow()
+            row.add_button(style=ButtonStyle.link, label='Solutions / Full Analysis', url=anal_url)
+            return await msg.channel.send(embed=embed, reference=msg, mention_author=True, components=row)
 
     async def fetch_log_analysis(self, url):
         async with self.bot.session.get('https://obsproject.com/analyzer-api/',

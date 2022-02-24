@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aiohttp import web
-from discord.ext.commands import Cog
+from disnake.ext.commands import Cog
 
 from .utils.github import GitHubHelper
 
