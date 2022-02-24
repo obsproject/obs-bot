@@ -84,6 +84,9 @@ class OBSBot(commands.Bot):
         # DMs
         if isinstance(channel, disnake.DMChannel):
             return True
+        # For threads, use the parent channel
+        if isinstance(channel, disnake.Thread):
+            channel = channel.parent
         # Guild channels
         if channel.guild.default_role in channel.overwrites:
             if not channel.overwrites[channel.guild.default_role].pair()[0].read_messages:
