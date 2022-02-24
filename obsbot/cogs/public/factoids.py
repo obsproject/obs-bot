@@ -177,7 +177,14 @@ class Factoids(Cog):
         elif user_mention:
             return await msg.channel.send(f'{user_mention} {message}')
         else:
-            return await msg.channel.send(message, embed=embed, reference=msg.reference, mention_author=True)
+            msg_reference = msg.reference
+            # If reference is a message from a bot, try resolving the referenced message's reference
+            if msg_reference and msg.reference.resolved.author.bot and (ref := msg.reference.resolved.reference):
+                msg_reference = ref
+
+            return await msg.channel.send(message, embed=embed,  # type: ignore
+                                          reference=msg_reference,
+                                          mention_author=True)
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(
