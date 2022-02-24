@@ -163,6 +163,14 @@ class Factoids(Cog):
         user_mention = None
         if msg.mentions and not msg.reference:
             user_mention = ' '.join(user.mention for user in msg.mentions)
+            
+        # if message is replying to bot message that is replying to a message, reply to original message
+        send_reference = None
+        if msg.reference:
+          if msg.reference.resolved.author == self.bot.user and msg.reference.resolved.reference:
+            send_reference = msg.reference.resolved.reference
+          else:
+            send_reference = msg.reference
 
         embed = None
         if factoid['embed']:
@@ -176,7 +184,7 @@ class Factoids(Cog):
         elif user_mention:
             return await msg.channel.send(f'{user_mention} {message}')
         else:
-            return await msg.channel.send(message, embed=embed, reference=msg.reference, mention_author=True)
+            return await msg.channel.send(message, embed=embed, reference=send_reference, mention_author=True)
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(
