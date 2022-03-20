@@ -288,8 +288,7 @@ class GitHubHelper:
                 elif 'win64' in artifact['name']:
                     self.state['nightly_windows'] = self.config['artifact_service'].format(artifact['id'])
 
-            artifact_name = artifact["name"].rpartition('-')[2]
-            artifacts_entries.append(f'[{artifact_name}]({artifact["archive_download_url"]})')
+            artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
 
         embed = Embed(title=f'Build {run["run_number"]} {build_result}', url=web_url,
                       description='\n'.join(message), timestamp=finished,
