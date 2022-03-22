@@ -72,3 +72,14 @@ cooldown = 5.0
 enabled = true
 db_table = "filters"
 log_channel = 12345678909876654321
+
+[steamworks]
+enabled = true
+api_key = "<steam api key>"
+app_id = 1234567
+steam_channel = 12345678909876654321
+repo = "user/repo"
+
+[steamworks.branches]
+# staging -> live branch mapping
+staging = "public"

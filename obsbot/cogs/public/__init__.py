@@ -5,5 +5,6 @@ cogs = [
     'cron',
     'log_analysis',
     'webhooks',
-    # 'onlybans'
+    # 'onlybans',
+    'steamworks'
 ]
