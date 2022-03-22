@@ -7,6 +7,7 @@ admins = [
 	12345678909876654321
 ]
 supporter_role = 12345678909876654321
+contributor_role = 12345678909876654321
 
 [db]
 host = "localhost"

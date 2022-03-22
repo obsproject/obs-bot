@@ -42,10 +42,12 @@ class OBSBot(commands.Bot):
         self.start_time = None
         self.main_guild = None
         self.supporter_role = None
+        self.contrib_role = None
         # admin ids, set via config, but can be changed at runtime
         self.admins = set(self.config['bot']['admins'])
         self.admins.add(self.config['bot']['owner'])
         self.supporters = set()
+        self.contributors = set()
 
     async def on_ready(self):
         logger.info('OBS Bot ready!')
@@ -57,6 +59,10 @@ class OBSBot(commands.Bot):
         if self.supporter_role:
             for user in self.supporter_role.members:
                 self.supporters.add(user.id)
+        self.contrib_role = self.main_guild.get_role(self.config['bot']['contributor_role'])
+        if self.contrib_role:
+            for user in self.contrib_role.members:
+                self.contributors.add(user.id)
 
         if game := self.state.get('game', None):
             activity = disnake.Game(game)
@@ -76,6 +82,13 @@ class OBSBot(commands.Bot):
         if self.is_admin(user):
             return True
         elif user.id in self.supporters:
+            return True
+        return False
+
+    def is_contributor(self, user: disnake.User):
+        if user.id in self.admins:
+            return True
+        elif user.id in self.contributors:
             return True
         return False
 
