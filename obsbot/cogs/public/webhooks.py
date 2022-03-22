@@ -105,6 +105,13 @@ class Webhooks(Cog):
 
             if body['action'] == 'completed':
                 self.bot.loop.create_task(self.fetch_github_ci_results(body))
+        elif event == 'workflow_run':
+            if body['action'] == 'completed':
+                run = body['workflow_run']
+                if run['workflow_id'] == self.config['steam_workflow_id']:
+                    if run['status'] == 'completed':
+                        steam_cog = self.bot.get_cog('Steamworks')
+                        self.bot.loop.create_task(steam_cog.build_update(run))
         elif event == 'discussion':
             # similar to issues/prs, but styled differently
             if body['action'] == 'created':

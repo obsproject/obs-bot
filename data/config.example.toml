@@ -28,6 +28,7 @@ db_table = "commit_messages"
 github_api_auth = "token <token>"
 commit_truncation_limit = 2
 workflow_id = 123456
+steam_workflow_id = 123456
 artifact_service = "https://my.server.com/artifacts?id={}"
 
 [webhooks.github.emotes]
