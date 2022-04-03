@@ -23,7 +23,8 @@ class Factoids(Cog):
         # The variables map to state variables, can be added at runtime
         self.variables = {
             '%nightly_url%': 'nightly_windows',
-            '%mac_nightly_url%': 'nightly_macos'
+            '%mac_nightly_url%': 'nightly_macos',
+            '%mac_m1_nightly_url%': 'nightly_macos_m1'
         }
 
         if 'factoid_variables' in self.bot.state:
