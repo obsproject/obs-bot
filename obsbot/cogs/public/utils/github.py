@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+import copy
 
 import dateutil.parser
 from disnake import Embed, Colour
@@ -95,7 +96,7 @@ class GitHubHelper:
         embed.set_footer(text='Pull Request')
         embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
         # create copy without description text for brief channel
-        brief_embed = embed.copy()
+        brief_embed = copy.deepcopy(embed)
         # filter out comments in template
         event_body['pull_request']['body'] = '\n'.join(
             l.strip() for l in event_body['pull_request']['body'].splitlines() if not l.startswith('<!-')
@@ -103,9 +104,10 @@ class GitHubHelper:
 
         # trim message to discord limits
         if len(event_body['pull_request']['body']) >= 2048:
-            embed.description = event_body['pull_request']['body'][:2000] + ' [... message trimmed]'
+            await self.message_body_edit(event_body['pull_request']['body'][:2000] + ' [... message trimmed]', embed)
         else:
-            embed.description = event_body['pull_request']['body']
+            await self.message_body_edit(event_body['pull_request']['body'], embed)
+        embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
         return brief_embed, embed
 
@@ -127,7 +129,7 @@ class GitHubHelper:
         embed.set_footer(text='Issue')
         embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
         # create copy without description text for brief channel
-        brief_embed = embed.copy()
+        brief_embed = copy.deepcopy(embed)
         event_body['issue']['body'] = '\n'.join(
             l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-')
         )
@@ -138,9 +140,10 @@ class GitHubHelper:
             issue_text = issue_text.replace('\n\n', '\n')
 
         if len(issue_text) >= 2048:
-            embed.description = issue_text[:2000] + ' [... message trimmed]'
+            await self.message_body_edit(issue_text[:2000] + ' [... message trimmed]', embed)
         else:
-            embed.description = issue_text
+            await self.message_body_edit(issue_text, embed)
+        embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
         return brief_embed, embed
 
@@ -319,6 +322,18 @@ class GitHubHelper:
 
         logger.error('Retries exhausted!')
         return None
+
+    async def message_body_edit(self, message_body, embed):
+        embed.clear_fields()
+        splitFields = message_body.split("###")[1:]
+        for field in splitFields:
+            field = field.replace('[x]', ':ballot_box_with_check:').replace('[ ]', ':x:')
+            field = field.split("\n", 1)
+            # remove fields that dont have responses cause we dont need it
+            if field[1] != "_No response_\n":
+                embed.add_field(name=field[0], value=field[1], inline=False)
+
+        return embed
 
     async def get_author_info(self, username):
         if not username:
