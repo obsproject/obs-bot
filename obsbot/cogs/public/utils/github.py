@@ -2,6 +2,8 @@ import asyncio
 import logging
 import time
 
+from typing import Generator
+
 import dateutil.parser
 from disnake import Embed, Colour
 
@@ -77,6 +79,24 @@ class GitHubHelper:
 
         return embed_commits
 
+    @staticmethod
+    def _format_embed(message_body) -> Generator[str, str]:
+        sections = message_body.split("###")[1:]
+
+        for section in sections:
+            name, body = section.partition('\n')[::2]
+            # strip trailing and leading newlines/whitespace
+            name, body = name.strip(), body.strip()
+            if body == '_No response_':
+                continue
+            # replace checkboxes with emotes
+            body = body.replace('[x]', ':ballot_box_with_check:').replace('[ ]', ':x:')
+            # make sure body does not exceed field length (1024)
+            if len(body) >= 1024:
+                body = body[:1000] + ' [... message trimmed]'
+
+            yield name, body
+
     async def get_pr_messages(self, event_body):
         pr_number = event_body['number']
         title = event_body['pull_request']['title']
@@ -91,21 +111,19 @@ class GitHubHelper:
 
         embed.set_author(name=author_name, url=event_body['pull_request']['user']['html_url'],
                          icon_url=event_body['pull_request']['user']['avatar_url'])
-
         embed.set_footer(text='Pull Request')
-        embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
-        # create copy without description text for brief channel
+        # create copy without pr body for brief channel
         brief_embed = embed.copy()
+        brief_embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
+
         # filter out comments in template
-        event_body['pull_request']['body'] = '\n'.join(
+        pr_body = '\n'.join(
             l.strip() for l in event_body['pull_request']['body'].splitlines() if not l.startswith('<!-')
         )
+        for name, value in self._format_embed(pr_body):
+            embed.add_field(name=name, value=value, inline=False)
 
-        # trim message to discord limits
-        if len(event_body['pull_request']['body']) >= 2048:
-            embed.description = event_body['pull_request']['body'][:2000] + ' [... message trimmed]'
-        else:
-            embed.description = event_body['pull_request']['body']
+        embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
         return brief_embed, embed
 
@@ -123,24 +141,20 @@ class GitHubHelper:
 
         embed.set_author(name=author_name, url=event_body['issue']['user']['html_url'],
                          icon_url=event_body['issue']['user']['avatar_url'])
-
         embed.set_footer(text='Issue')
-        embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
         # create copy without description text for brief channel
         brief_embed = embed.copy()
-        event_body['issue']['body'] = '\n'.join(
+        brief_embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
+
+        # filter out comments
+        issue_body = '\n'.join(
             l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-')
         )
 
-        issue_text = event_body['issue']['body']
-        # strip double-newlines from issue forms
-        if '\n\n' in issue_text:
-            issue_text = issue_text.replace('\n\n', '\n')
+        for name, value in self._format_embed(issue_body):
+            embed.add_field(name=name, value=value, inline=False)
 
-        if len(issue_text) >= 2048:
-            embed.description = issue_text[:2000] + ' [... message trimmed]'
-        else:
-            embed.description = issue_text
+        embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
         return brief_embed, embed
 
