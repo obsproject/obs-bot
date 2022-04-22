@@ -12,7 +12,7 @@ from disnake.ui.action_row import ActionRow
 
 
 logger = logging.getLogger(__name__)
-STEAMWORKS_COLOUR = 0x1b1e22
+STEAMWORKS_COLOUR = 0x1B1E22
 STEAMWORKS_API_URL = 'https://partner.steam-api.com'
 GITHUB_API_URL = 'https://api.github.com'
 
@@ -38,20 +38,30 @@ class Steamworks(Cog):
             logger.info(f'Found Steam channel: {self.steam_channel}')
 
     async def get_builds(self):
-        builds = await self.get_with_retry(f'{STEAMWORKS_API_URL}/ISteamApps/GetAppBuilds/v1/',
-                                           params=dict(appid=self.config['app_id'], key=self.config['api_key'],
-                                                       count=50))
+        builds = await self.get_with_retry(
+            f'{STEAMWORKS_API_URL}/ISteamApps/GetAppBuilds/v1/',
+            params=dict(appid=self.config['app_id'], key=self.config['api_key'], count=50),
+        )
         return builds.get('response', {}).get('builds', {})
 
     async def get_branches(self):
-        builds = await self.get_with_retry(f'{STEAMWORKS_API_URL}/ISteamApps/GetAppBetas/v1/',
-                                           params=dict(appid=self.config['app_id'], key=self.config['api_key']))
+        builds = await self.get_with_retry(
+            f'{STEAMWORKS_API_URL}/ISteamApps/GetAppBetas/v1/',
+            params=dict(appid=self.config['app_id'], key=self.config['api_key']),
+        )
         return builds.get('response', {}).get('betas', {})
 
     async def set_build_live(self, build_id, branch='public', desc=''):
-        builds = await self.post_with_retry(f'{STEAMWORKS_API_URL}/ISteamApps/SetAppBuildLive/v1/',
-                                            data=dict(appid=self.config['app_id'], key=self.config['api_key'],
-                                                      buildid=build_id, betakey=branch, description=desc))
+        builds = await self.post_with_retry(
+            f'{STEAMWORKS_API_URL}/ISteamApps/SetAppBuildLive/v1/',
+            data=dict(
+                appid=self.config['app_id'],
+                key=self.config['api_key'],
+                buildid=build_id,
+                betakey=branch,
+                description=desc,
+            ),
+        )
         return builds.get('response', {})
 
     async def get_with_retry(self, url, params=None, retries=5, retry_interval=5.0):
@@ -136,8 +146,9 @@ class Steamworks(Cog):
             if 'nightly-g' in description:
                 # fetch commit metadata based on description
                 shorthash = description.rpartition('g')[2]
-                commit_info = await self.get_with_retry(f'{GITHUB_API_URL}/repos/{self.config["repo"]}'
-                                                        f'/commits/{shorthash}')
+                commit_info = await self.get_with_retry(
+                    f'{GITHUB_API_URL}/repos/{self.config["repo"]}' f'/commits/{shorthash}'
+                )
                 base_name = commit_info['commit']['message'].partition('\n')[0]
                 base_url = commit_info['html_url']
 
@@ -148,8 +159,9 @@ class Steamworks(Cog):
 
                 # check if build matches release tag
                 if description.endswith(release_tag):
-                    release_info = await self.get_with_retry(f'{GITHUB_API_URL}/repos/{self.config["repo"]}'
-                                                             f'/releases/tags/{release_tag}')
+                    release_info = await self.get_with_retry(
+                        f'{GITHUB_API_URL}/repos/{self.config["repo"]}' f'/releases/tags/{release_tag}'
+                    )
                     # fetch release metadata?
                     base_type = 'Pre-Release' if release_info['prerelease'] else 'Release'
                     base_name = release_info['name']
@@ -159,18 +171,26 @@ class Steamworks(Cog):
                     embed.description = f'Based on {base_type} [{base_name}]({base_url})'
 
             row = ActionRow()
-            row.add_button(style=ButtonStyle.link, label='Manage builds',
-                           url=f'https://partner.steamgames.com/apps/builds/{self.config["app_id"]}')
-            row.add_button(style=ButtonStyle.link, label='Build details',
-                           url=f'https://partner.steamgames.com/apps/builddetails/{self.config["app_id"]}/{build_id}')
+            row.add_button(
+                style=ButtonStyle.link,
+                label='Manage builds',
+                url=f'https://partner.steamgames.com/apps/builds/{self.config["app_id"]}',
+            )
+            row.add_button(
+                style=ButtonStyle.link,
+                label='Build details',
+                url=f'https://partner.steamgames.com/apps/builddetails/{self.config["app_id"]}/{build_id}',
+            )
 
             # if it's a known staging branch, offer the push-to-live button
             for current_branch in current_branches:
                 target_branch = self.config['branches'].get(current_branch)
                 if target_branch and target_branch not in current_branches:
-                    row.add_button(label=f'Push to "{target_branch}" branch',
-                                   style=ButtonStyle.danger,
-                                   custom_id=f'steamworks_{build_id}_{target_branch}')
+                    row.add_button(
+                        label=f'Push to "{target_branch}" branch',
+                        style=ButtonStyle.danger,
+                        custom_id=f'steamworks_{build_id}_{target_branch}',
+                    )
 
             await self.steam_channel.send(embed=embed, components=row)
 
@@ -186,9 +206,10 @@ class Steamworks(Cog):
         _, build_id, target_branch = interaction.data.custom_id.split('_')
         res = await self.set_build_live(build_id, target_branch, desc=f'Requested by {interaction.author}')
         if res['result'] != 1:
-            embed = Embed(title='Build publishing failed.',
-                          description=f'Failed to push build to "{target_branch}":\n'
-                                      f'```\n{res["message"]}\n```')
+            embed = Embed(
+                title='Build publishing failed.',
+                description=f'Failed to push build to "{target_branch}":\n' f'```\n{res["message"]}\n```',
+            )
             return await interaction.response.send_message(embed=embed)
 
         embed = interaction.message.embeds[0]

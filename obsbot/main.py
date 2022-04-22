@@ -18,8 +18,9 @@ logger = logging.getLogger(__name__)
 
 class OBSBot(commands.Bot):
     def __init__(self, config_file):
-        intents = disnake.Intents(bans=True, emojis=True, guilds=True, members=True,
-                                  messages=True, reactions=True, voice_states=False)
+        intents = disnake.Intents(
+            bans=True, emojis=True, guilds=True, members=True, messages=True, reactions=True, voice_states=False
+        )
         super().__init__(command_prefix='.', help_command=None, intents=intents)  # type: ignore
 
         self.config = toml.load(open(config_file))
@@ -116,14 +117,15 @@ class OBSBot(commands.Bot):
 
     async def on_message(self, message):
         if (
-            isinstance(message.channel, disnake.DMChannel) and not
-            message.author.bot and not
-            message.content.startswith('.') and not
-            message.content.startswith('!') and not
-            self.is_supporter(message.author)
+            isinstance(message.channel, disnake.DMChannel)
+            and not message.author.bot
+            and not message.content.startswith('.')
+            and not message.content.startswith('!')
+            and not self.is_supporter(message.author)
         ):
-            await message.channel.send('DMs are not monitored, please use the support '
-                                       'channels in discord.gg/obsproject instead.')
+            await message.channel.send(
+                'DMs are not monitored, please use the support ' 'channels in discord.gg/obsproject instead.'
+            )
         else:
             await self.process_commands(message)
 

@@ -23,8 +23,9 @@ def setup_logging(logfile=None, debug=False):
         log = logging.getLogger()
         log.setLevel(logging.INFO if not debug else logging.DEBUG)
         if logfile:
-            handler = TimedRotatingFileHandler(filename=logfile, when='midnight', utc=True,
-                                               encoding='utf-8', backupCount=5)
+            handler = TimedRotatingFileHandler(
+                filename=logfile, when='midnight', utc=True, encoding='utf-8', backupCount=5
+            )
             fmt = logging.Formatter(_log_fmt, _log_dt_fmt, style='{')
             handler.setFormatter(fmt)
             log.addHandler(handler)
@@ -41,14 +42,12 @@ def setup_logging(logfile=None, debug=False):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--debug', dest='debug', action='store_true',
-                        help='Set loglevel to debug')
-    parser.add_argument('-l', '--logfile', dest='logfile', action='store',
-                        help='Logfile (optional)')
-    parser.add_argument('-V', '--version', dest='version', action='store_true',
-                        help='Print version and exit')
-    parser.add_argument('-c', '--config-file', dest='config_file', action='store',
-                        help='Configuration file to run bot with')
+    parser.add_argument('-v', '--debug', dest='debug', action='store_true', help='Set loglevel to debug')
+    parser.add_argument('-l', '--logfile', dest='logfile', action='store', help='Logfile (optional)')
+    parser.add_argument('-V', '--version', dest='version', action='store_true', help='Print version and exit')
+    parser.add_argument(
+        '-c', '--config-file', dest='config_file', action='store', help='Configuration file to run bot with'
+    )
     args = parser.parse_args()
 
     if args.version:

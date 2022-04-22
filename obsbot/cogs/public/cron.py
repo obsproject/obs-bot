@@ -29,8 +29,7 @@ class Cron(commands.Cog):
         if 'twitter' in self.config and (creds := self.config['twitter'].get('credentials')):
             # silence peony
             logging.getLogger('peony.data_processing').setLevel(logging.WARNING)
-            self.twitter_client = PeonyClient(**creds, loop=self.bot.loop,
-                                              session=self.bot.session)
+            self.twitter_client = PeonyClient(**creds, loop=self.bot.loop, session=self.bot.session)
             logger.info('Starting twitter cronjob...')
             self.twitter.add_exception_type(PeonyException)
             self.twitter.start()
@@ -65,13 +64,19 @@ class Cron(commands.Cog):
             if len(description) > 180:
                 description = description[:180] + ' [...]'
 
-            embed = Embed(title=f'{item["id"]}: {item["title"]}',
-                          colour=Colour(self._fider_colour),
-                          url=url, description=description,
-                          timestamp=dateutil.parser.parse(item['createdAt']))
+            embed = Embed(
+                title=f'{item["id"]}: {item["title"]}',
+                colour=Colour(self._fider_colour),
+                url=url,
+                description=description,
+                timestamp=dateutil.parser.parse(item['createdAt']),
+            )
 
-            embed.set_author(name='Fider', url='https://ideas.obsproject.com/',
-                             icon_url='https://cdn.rodney.io/stuff/obsbot/fider.png')
+            embed.set_author(
+                name='Fider',
+                url='https://ideas.obsproject.com/',
+                icon_url='https://cdn.rodney.io/stuff/obsbot/fider.png',
+            )
             embed.set_footer(text='New Idea on Fider')
             name = 'Anonymous' if not item['user']['name'] else item['user']['name']
             embed.add_field(name='Created By', value=name, inline=True)
@@ -94,8 +99,11 @@ class Cron(commands.Cog):
         _user_name = self.config['twitter']['screen_name']
 
         tweets = await self.twitter_client.api.statuses.user_timeline.get(
-            screen_name=_user_name.lower(), _timeout=1, count=100, trim_user=True,
-            since_id=self.bot.state['twitter_last_id']
+            screen_name=_user_name.lower(),
+            _timeout=1,
+            count=100,
+            trim_user=True,
+            since_id=self.bot.state['twitter_last_id'],
         )
 
         for tweet in sorted(tweets, key=lambda a: a['id']):

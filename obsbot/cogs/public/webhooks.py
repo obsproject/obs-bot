@@ -158,12 +158,10 @@ class Webhooks(Cog):
                 logger.error(f'Getting commit message for editing failed with error {repr(e)}')
             else:
                 if len(embed.fields) == 2:  # no CI info yet
-                    embed.add_field(name='Continuous Integration',
-                                    value=field_value, inline=False)
+                    embed.add_field(name='Continuous Integration', value=field_value, inline=False)
                 else:  # append to existing CI info
                     new_val = '\n'.join((embed.fields[2].value, field_value))
-                    embed.set_field_at(2, name='Continuous Integration',
-                                       value=new_val, inline=False)
+                    embed.set_field_at(2, name='Continuous Integration', value=new_val, inline=False)
                 try:
                     await msg.edit(embed=embed)
                 except Exception as e:

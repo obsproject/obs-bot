@@ -12,15 +12,16 @@ logger = logging.getLogger(__name__)
 
 class GitHubHelper:
     """Helper for processing github webhooks and API stuff"""
-    _commit_colour = 0xffffff
-    _skipped_commit_colour = 0x9b9b9b
-    _pull_request_colour = 0x366d6
+
+    _commit_colour = 0xFFFFFF
+    _skipped_commit_colour = 0x9B9B9B
+    _pull_request_colour = 0x366D6
     _issue_colour = 0x2CBE4E
-    _discussion_colour = 0x9a66ee
-    _ci_failed_colour = 0xd0021b
+    _discussion_colour = 0x9A66EE
+    _ci_failed_colour = 0xD0021B
     _ci_some_failed_colour = 0xF5A623
     _ci_passed_colour = 0x7ED321
-    _wiki_colour = 0xf8c8dc
+    _wiki_colour = 0xF8C8DC
 
     def __init__(self, session, config, state):
         self.session = session
@@ -41,8 +42,11 @@ class GitHubHelper:
             first_hash = commits[0]['id']
             last_hash = commits[-2]['id']
             compare_url = f'https://github.com/{project}/compare/{first_hash}^...{last_hash}'
-            embed = Embed(title=f'Skipped {len(commits) - 1} commits... (click link for diff)',
-                          colour=Colour(self._skipped_commit_colour), url=compare_url)
+            embed = Embed(
+                title=f'Skipped {len(commits) - 1} commits... (click link for diff)',
+                colour=Colour(self._skipped_commit_colour),
+                url=compare_url,
+            )
             embed_commits.append((embed, None))
             commits = commits[-1:]
 
@@ -51,8 +55,9 @@ class GitHubHelper:
             author_name = commit['author'].get('name', None)
             timestamp = dateutil.parser.parse(commit['timestamp'])
             commit_message = commit['message'].split('\n')
-            embed = Embed(title=commit_message[0], colour=Colour(self._commit_colour),
-                          url=commit['url'], timestamp=timestamp)
+            embed = Embed(
+                title=commit_message[0], colour=Colour(self._commit_colour), url=commit['url'], timestamp=timestamp
+            )
 
             if len(commit_message) > 2 and not brief:
                 commit_body = '\n'.join(commit_message[2:])
@@ -101,16 +106,23 @@ class GitHubHelper:
         pr_number = event_body['number']
         title = event_body['pull_request']['title']
         timestamp = dateutil.parser.parse(event_body['pull_request']['created_at'])
-        embed = Embed(title=f'#{pr_number}: {title}', colour=Colour(self._pull_request_colour),
-                      url=event_body['pull_request']['html_url'], timestamp=timestamp)
+        embed = Embed(
+            title=f'#{pr_number}: {title}',
+            colour=Colour(self._pull_request_colour),
+            url=event_body['pull_request']['html_url'],
+            timestamp=timestamp,
+        )
 
         author_name = event_body['pull_request']['user']['login']
         author = await self.get_author_info(author_name)
         if author and author['name'] and author['name'] != author['login']:
             author_name = f'{author["name"]} ({author["login"]})'
 
-        embed.set_author(name=author_name, url=event_body['pull_request']['user']['html_url'],
-                         icon_url=event_body['pull_request']['user']['avatar_url'])
+        embed.set_author(
+            name=author_name,
+            url=event_body['pull_request']['user']['html_url'],
+            icon_url=event_body['pull_request']['user']['avatar_url'],
+        )
         embed.set_footer(text='Pull Request')
         # create copy without pr body for brief channel
         brief_embed = embed.copy()
@@ -131,25 +143,30 @@ class GitHubHelper:
         issue_number = event_body['issue']['number']
         title = event_body['issue']['title']
         timestamp = dateutil.parser.parse(event_body['issue']['created_at'])
-        embed = Embed(title=f'#{issue_number}: {title}', colour=Colour(self._issue_colour),
-                      url=event_body['issue']['html_url'], timestamp=timestamp)
+        embed = Embed(
+            title=f'#{issue_number}: {title}',
+            colour=Colour(self._issue_colour),
+            url=event_body['issue']['html_url'],
+            timestamp=timestamp,
+        )
 
         author_name = event_body['issue']['user']['login']
         author = await self.get_author_info(author_name)
         if author and author['name'] and author['name'] != author['login']:
             author_name = f'{author["name"]} ({author["login"]})'
 
-        embed.set_author(name=author_name, url=event_body['issue']['user']['html_url'],
-                         icon_url=event_body['issue']['user']['avatar_url'])
+        embed.set_author(
+            name=author_name,
+            url=event_body['issue']['user']['html_url'],
+            icon_url=event_body['issue']['user']['avatar_url'],
+        )
         embed.set_footer(text='Issue')
         # create copy without description text for brief channel
         brief_embed = embed.copy()
         brief_embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
         # filter out comments
-        issue_body = '\n'.join(
-            l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-')
-        )
+        issue_body = '\n'.join(l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-'))
 
         for name, value in self._format_embed(issue_body):
             embed.add_field(name=name, value=value, inline=False)
@@ -163,17 +180,23 @@ class GitHubHelper:
         title = event_body['discussion']['title']
         category = event_body['discussion']['category']['name']
         timestamp = dateutil.parser.parse(event_body['discussion']['created_at'])
-        embed = Embed(title=f'#{discussion_number}: {category} - {title}',
-                      colour=Colour(self._discussion_colour), timestamp=timestamp,
-                      url=event_body['discussion']['html_url'])
+        embed = Embed(
+            title=f'#{discussion_number}: {category} - {title}',
+            colour=Colour(self._discussion_colour),
+            timestamp=timestamp,
+            url=event_body['discussion']['html_url'],
+        )
 
         author_name = event_body['discussion']['user']['login']
         author = await self.get_author_info(author_name)
         if author and author['name'] and author['name'] != author['login']:
             author_name = f'{author["name"]} ({author["login"]})'
 
-        embed.set_author(name=author_name, url=event_body['discussion']['user']['html_url'],
-                         icon_url=event_body['discussion']['user']['avatar_url'])
+        embed.set_author(
+            name=author_name,
+            url=event_body['discussion']['user']['html_url'],
+            icon_url=event_body['discussion']['user']['avatar_url'],
+        )
 
         embed.set_footer(text='Discussion')
         embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
@@ -198,8 +221,9 @@ class GitHubHelper:
         author = await self.get_author_info(author_name)
         if author and author['name'] and author['name'] != author['login']:
             author_name = f'{author["name"]} ({author["login"]})'
-        embed.set_author(name=author_name, url=event_body['sender']['html_url'],
-                         icon_url=event_body['sender']['avatar_url'])
+        embed.set_author(
+            name=author_name, url=event_body['sender']['html_url'], icon_url=event_body['sender']['avatar_url']
+        )
         embed.add_field(name='Repository', value=event_body['repository']['full_name'])
 
         body = []
@@ -218,10 +242,11 @@ class GitHubHelper:
         # this request a few times before giving up (did I mention the API related to actions is "great"? *sigh*)
         run = None
         for _try in range(1, 6):
-            runs = await self.get_with_retry(f'https://api.github.com/repos/obsproject/obs-studio/'
-                                             f'actions/workflows/{self.config["workflow_id"]}/runs',
-                                             params=dict(event='push', status='completed', per_page=50,
-                                                         t=int(time.time())))
+            runs = await self.get_with_retry(
+                f'https://api.github.com/repos/obsproject/obs-studio/'
+                f'actions/workflows/{self.config["workflow_id"]}/runs',
+                params=dict(event='push', status='completed', per_page=50, t=int(time.time())),
+            )
             # if request + all retries failed, just give up
             if not runs and _try == 5:
                 logger.error('Getting GitHub workflow runs failed horribly.')
@@ -236,7 +261,7 @@ class GitHubHelper:
                 break
             # exponential backoff for subsequent tries
             logger.warning(f'Check suite ID wasn\'t in workflow results, retrying in {2**_try} seconds...')
-            await asyncio.sleep(2.0 ** _try)
+            await asyncio.sleep(2.0**_try)
         else:
             logger.error('Could not find check suite id in workflow runs after 5 retries.')
             return None
@@ -293,8 +318,9 @@ class GitHubHelper:
         artifacts_entries = []
         for artifact in artifacts['artifacts']:
             # did I mention this API is great?
-            artifact['archive_download_url'] = f'https://github.com/obsproject/obs-studio/suites/' \
-                                               f'{check_suite_id}/artifacts/{artifact["id"]}'
+            artifact['archive_download_url'] = (
+                f'https://github.com/obsproject/obs-studio/suites/' f'{check_suite_id}/artifacts/{artifact["id"]}'
+            )
             # update nightly build downloads in internal state
             if build_success and branch == 'master':
                 if 'macos' in artifact['name']:
@@ -307,11 +333,14 @@ class GitHubHelper:
 
             artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
 
-        embed = Embed(title=f'Build {run["run_number"]} {build_result}', url=web_url,
-                      description='\n'.join(message), timestamp=finished,
-                      colour=colour)
-        embed.set_author(name='GitHub Actions',
-                         icon_url='https://cdn.rodney.io/stuff/obsbot/github_actions.png')
+        embed = Embed(
+            title=f'Build {run["run_number"]} {build_result}',
+            url=web_url,
+            description='\n'.join(message),
+            timestamp=finished,
+            colour=colour,
+        )
+        embed.set_author(name='GitHub Actions', icon_url='https://cdn.rodney.io/stuff/obsbot/github_actions.png')
         embed.add_field(name="Project", value=repo, inline=True)
         embed.add_field(name="Branch", value=branch, inline=True)
         # only attach artifact urls if build succeeded
@@ -324,7 +353,8 @@ class GitHubHelper:
         for i in range(retries):
             try:
                 async with self.session.get(
-                        url, params=params, headers=dict(Authorization=self.config['github_api_auth'])) as r:
+                    url, params=params, headers=dict(Authorization=self.config['github_api_auth'])
+                ) as r:
                     r.raise_for_status()
                     return await r.json()
             except Exception as e:
@@ -344,8 +374,9 @@ class GitHubHelper:
                 return self.user_cache[username]
 
         try:
-            async with self.session.get(f'https://api.github.com/users/{username}',
-                                        headers={'Authorization': self.config['github_api_auth']}) as r:
+            async with self.session.get(
+                f'https://api.github.com/users/{username}', headers={'Authorization': self.config['github_api_auth']}
+            ) as r:
                 r.raise_for_status()
                 author = await r.json()
                 self.user_cache[username] = author

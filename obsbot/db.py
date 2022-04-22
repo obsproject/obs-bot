@@ -12,14 +12,15 @@ class DBHelper:
     Helper class that abstracts DB operations and provides a simpler interface to create tasks
     that can run asynchronously in case the result of the operation is not important.
     """
+
     def __init__(self):
         self.conn = None
 
     async def connect(self, config):
         logger.info(f'Connecting to database {config["host"]}:{config["port"]} as "{config["user"]}"...')
-        self.conn = await asyncpg.create_pool(host=config['host'], port=config['port'],
-                                              user=config['user'], password=config['pass'],
-                                              command_timeout=60)
+        self.conn = await asyncpg.create_pool(
+            host=config['host'], port=config['port'], user=config['user'], password=config['pass'], command_timeout=60
+        )
 
     async def query(self, query, *args, **kwargs) -> Union[List[asyncpg.Record], None]:
         """Execute query and return results"""

@@ -41,21 +41,26 @@ class OnlyBans(Cog):
             self.bot.state['mod_first_delete'] = 0
 
         if admin := self.bot.get_cog('Admin'):
-            admin.add_help_section('Moderation', [
-                ('.listfilters', 'List existing filters'),
-                ('.addfilter "<name>" `<regex>`', 'Add regex-based message filter'),
-                ('.modfilter "<name>" `<regex>`', 'Update regex of filter'),
-                ('.delfilter "<name>"', 'Delete filter'),
-                ('.setpunishment "<name>" [none/kick/ban]', 'sets additional violation action (default: none)'),
-                ('.testfilters <message>', 'Test if message gets caught by any filter'),
-                ('.togglefiltering', 'Enable/Disable filtering'),
-                ('.filterstats', 'Print some stats'),
-                ('.resettheclock', 'Reset days since last false-positive to 0'),
-            ], restricted=True)
+            admin.add_help_section(
+                'Moderation',
+                [
+                    ('.listfilters', 'List existing filters'),
+                    ('.addfilter "<name>" `<regex>`', 'Add regex-based message filter'),
+                    ('.modfilter "<name>" `<regex>`', 'Update regex of filter'),
+                    ('.delfilter "<name>"', 'Delete filter'),
+                    ('.setpunishment "<name>" [none/kick/ban]', 'sets additional violation action (default: none)'),
+                    ('.testfilters <message>', 'Test if message gets caught by any filter'),
+                    ('.togglefiltering', 'Enable/Disable filtering'),
+                    ('.filterstats', 'Print some stats'),
+                    ('.resettheclock', 'Reset days since last false-positive to 0'),
+                ],
+                restricted=True,
+            )
 
     def sort_filters(self):
-        self.sorted_filters = sorted(self.filters.items(), reverse=True,
-                                     key=lambda a: (a[0] in self.bannable) * 2 + (a[0] in self.kickable))
+        self.sorted_filters = sorted(
+            self.filters.items(), reverse=True, key=lambda a: (a[0] in self.bannable) * 2 + (a[0] in self.kickable)
+        )
         logger.info(f'Presorted {len(self.sorted_filters)} filters.')
 
     async def fetch_filters(self):
@@ -102,14 +107,13 @@ class OnlyBans(Cog):
 
         embed = Embed(title='Registered Message Filters')
         if _ban_filters:
-            embed.add_field(name='Ban Filters', inline=False,
-                            value='```\n{}\n```'.format('\n'.join(_ban_filters)))
+            embed.add_field(name='Ban Filters', inline=False, value='```\n{}\n```'.format('\n'.join(_ban_filters)))
         if _kick_filters:
-            embed.add_field(name='Kick Filters', inline=False,
-                            value='```\n{}\n```'.format('\n'.join(_kick_filters)))
+            embed.add_field(name='Kick Filters', inline=False, value='```\n{}\n```'.format('\n'.join(_kick_filters)))
         if _delete_filters:
-            embed.add_field(name='Delete Filters', inline=False,
-                            value='```\n{}\n```'.format('\n'.join(_delete_filters)))
+            embed.add_field(
+                name='Delete Filters', inline=False, value='```\n{}\n```'.format('\n'.join(_delete_filters))
+            )
 
         return await ctx.send(embed=embed)
 
@@ -131,8 +135,9 @@ class OnlyBans(Cog):
         except re.error as e:
             return await ctx.send(f'Compiling regex failed: {e}')
 
-        await self.bot.db.exec(f'''INSERT INTO "{self.config["db_table"]}" (name, regex) VALUES ($1, $2)''',
-                               name, regex)
+        await self.bot.db.exec(
+            f'''INSERT INTO "{self.config["db_table"]}" (name, regex) VALUES ($1, $2)''', name, regex
+        )
         return await ctx.send(f'Added filter `{name}` (regex: `{regex}`) to filter list.')
 
     @command()
@@ -153,8 +158,7 @@ class OnlyBans(Cog):
         except re.error as e:
             return await ctx.send(f'Compiling regex failed: {e}')
 
-        await self.bot.db.exec(f'''UPDATE "{self.config["db_table"]}" SET "regex"=$1 WHERE "name"=$2''',
-                               regex, name)
+        await self.bot.db.exec(f'''UPDATE "{self.config["db_table"]}" SET "regex"=$1 WHERE "name"=$2''', regex, name)
         return await ctx.send(f'Updated filter `{name}` to `{regex}`.')
 
     @command()
@@ -200,8 +204,8 @@ class OnlyBans(Cog):
             self.kickable.remove(name)
 
         await self.bot.db.exec(
-            f'''UPDATE "{self.config["db_table"]}" SET "bannable"=$1, "kickable"=$2 WHERE "name"=$3''',
-            ban, kick, name)
+            f'''UPDATE "{self.config["db_table"]}" SET "bannable"=$1, "kickable"=$2 WHERE "name"=$3''', ban, kick, name
+        )
 
         if ban:
             self.bannable.add(name)
@@ -269,7 +273,7 @@ class OnlyBans(Cog):
             f'- Total kicks: {self.bot.state["mod_kicks"]} ({kicks_per_day:.02f} per day)',
             f'- Total bans: {self.bot.state["mod_bans"]} ({bans_per_day:.02f} per day)',
             f'- Times faster than Dyno: {self.bot.state["mod_faster"]}',
-            f'- Days since last false-positive: {days_since_fp:d}'
+            f'- Days since last false-positive: {days_since_fp:d}',
         ]
         return await ctx.send('\n'.join(message))
 
@@ -320,10 +324,12 @@ class OnlyBans(Cog):
             if not self.bot.state['mod_first_delete']:
                 self.bot.state['mod_first_delete'] = time.time()
 
-        embed = Embed(colour=0xC90000,  # title='Message Filter Match',
-                      description=f'**Message by** {msg.author.mention} **in** '
-                                  f'{msg.channel.mention} **matched filter:**\n'
-                                  f'```\n{msg.content}\n```')
+        embed = Embed(
+            colour=0xC90000,  # title='Message Filter Match',
+            description=f'**Message by** {msg.author.mention} **in** '
+            f'{msg.channel.mention} **matched filter:**\n'
+            f'```\n{msg.content}\n```',
+        )
         embed.set_footer(text=f'Message ID: {msg.id}')
         embed.add_field(name='Filter name', value=f'`{name}`', inline=True)
         embed.add_field(name='Filter regex', value=f'`{regex.pattern}`', inline=True)

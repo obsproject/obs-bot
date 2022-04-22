@@ -24,27 +24,30 @@ class Factoids(Cog):
         self.variables = {
             '%nightly_url%': 'nightly_windows',
             '%mac_nightly_url%': 'nightly_macos',
-            '%mac_m1_nightly_url%': 'nightly_macos_m1'
+            '%mac_m1_nightly_url%': 'nightly_macos_m1',
         }
 
         if 'factoid_variables' in self.bot.state:
             self.variables.update(self.bot.state['factoid_variables'])
 
         if admin := self.bot.get_cog('Admin'):
-            admin.add_help_section('Factoids', [
-                ('.add <name> <message>', 'Add new factoid'),
-                ('.del <name>', 'Delete factoid'),
-                ('.mod <name> <new message>', 'Modify existing factoid ("" to clear)'),
-                ('.ren <name> <new name>', 'Rename existing factoid or alias'),
-                ('.addalias <alias> <name>', 'Add alias to factoid'),
-                ('.delalias <alias>', 'Rename existing factoid'),
-                ('.setembed <name> [y/n]', 'Set/toggle embed status'),
-                ('.setimgurl <name> [url]', 'set image url (empty to clear)'),
-                ('.info <name>', 'Print factoid info'),
-                ('.top', 'Print most used commands'),
-                ('.bottom', 'Print least used commands'),
-                ('.unused', 'Print unused commands'),
-            ])
+            admin.add_help_section(
+                'Factoids',
+                [
+                    ('.add <name> <message>', 'Add new factoid'),
+                    ('.del <name>', 'Delete factoid'),
+                    ('.mod <name> <new message>', 'Modify existing factoid ("" to clear)'),
+                    ('.ren <name> <new name>', 'Rename existing factoid or alias'),
+                    ('.addalias <alias> <name>', 'Add alias to factoid'),
+                    ('.delalias <alias>', 'Rename existing factoid'),
+                    ('.setembed <name> [y/n]', 'Set/toggle embed status'),
+                    ('.setimgurl <name> [url]', 'set image url (empty to clear)'),
+                    ('.info <name>', 'Print factoid info'),
+                    ('.top', 'Print most used commands'),
+                    ('.bottom', 'Print least used commands'),
+                    ('.unused', 'Print unused commands'),
+                ],
+            )
 
     async def fetch_factoids(self, refresh=False):
         rows = await self.bot.db.query(f'SELECT * FROM "{self.config["db_table"]}"')
@@ -60,15 +63,23 @@ class Factoids(Cog):
 
         for record in rows:
             name = record['name']
-            factoid = dict(name=name, uses=record['uses'], embed=record['embed'], message=record['message'],
-                           image_url=record['image_url'], aliases=record['aliases'])
+            factoid = dict(
+                name=name,
+                uses=record['uses'],
+                embed=record['embed'],
+                message=record['message'],
+                image_url=record['image_url'],
+                aliases=record['aliases'],
+            )
             self.factoids[name] = factoid
             for alias in record['aliases']:
                 self.alias_map[alias] = name
 
         # Get top N commands, register new and unregister old ones
-        rows = await self.bot.db.query(f'SELECT "name" FROM "{self.config["db_table"]}" '
-                                       f'ORDER BY "uses" DESC LIMIT {self.config["slash_command_limit"]}')
+        rows = await self.bot.db.query(
+            f'SELECT "name" FROM "{self.config["db_table"]}" '
+            f'ORDER BY "uses" DESC LIMIT {self.config["slash_command_limit"]}'
+        )
         # some simple set maths to get new/old/current commands
         commands = set(r['name'] for r in rows)
         old_commands = set(c.name for c in self.bot.slash_commands)
@@ -82,7 +93,7 @@ class Factoids(Cog):
                     self.slash_factoid,
                     name=factoid,
                     description=f'Sends "{factoid}" factoid',
-                    guild_ids=[self.bot.config['bot']['main_guild']]
+                    guild_ids=[self.bot.config['bot']['main_guild']],
                 )
             )
 
@@ -183,14 +194,13 @@ class Factoids(Cog):
             if msg_reference and msg.reference.resolved.author.bot and (ref := msg.reference.resolved.reference):
                 msg_reference = ref
 
-            return await msg.channel.send(message, embed=embed,  # type: ignore
-                                          reference=msg_reference,
-                                          mention_author=True)
+            return await msg.channel.send(
+                message, embed=embed, reference=msg_reference, mention_author=True  # type: ignore
+            )
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(
-            f'''UPDATE "{self.config["db_table"]}" SET uses=uses+1 WHERE name=$1''',
-            factoid_name
+            f'''UPDATE "{self.config["db_table"]}" SET uses=uses+1 WHERE name=$1''', factoid_name
         )
 
     @command()
@@ -201,8 +211,7 @@ class Factoids(Cog):
             return await ctx.send(f'The specified name ("{name}") already exists as factoid or alias!')
 
         await self.bot.db.exec(
-            f'''INSERT INTO "{self.config["db_table"]}" (name, message) VALUES ($1, $2)''',
-            name, message
+            f'''INSERT INTO "{self.config["db_table"]}" (name, message) VALUES ($1, $2)''', name, message
         )
         await self.fetch_factoids(refresh=True)
         return await ctx.send(f'Factoid "{name}" has been added.')
@@ -219,10 +228,7 @@ class Factoids(Cog):
         if self.factoids[_name]['embed'] and message == '""':
             message = ''
 
-        await self.bot.db.exec(
-            f'''UPDATE "{self.config["db_table"]}" SET message=$2 WHERE name=$1''',
-            _name, message
-        )
+        await self.bot.db.exec(f'''UPDATE "{self.config["db_table"]}" SET message=$2 WHERE name=$1''', _name, message)
 
         await self.fetch_factoids(refresh=True)
         return await ctx.send(f'Factoid "{name}" has been updated.')
@@ -232,8 +238,9 @@ class Factoids(Cog):
         if not self.bot.is_admin(ctx.author):
             return
         if name not in self.factoids:
-            return await ctx.send(f'The specified factoid name ("{name}") does not exist '
-                                  f'(use base name instead of alias)!')
+            return await ctx.send(
+                f'The specified factoid name ("{name}") does not exist ' f'(use base name instead of alias)!'
+            )
 
         await self.bot.db.exec(f'''DELETE FROM "{self.config["db_table"]}" WHERE name=$1''', name)
         await self.fetch_factoids(refresh=True)
@@ -256,17 +263,13 @@ class Factoids(Cog):
             aliases.append(new_name)
 
             await self.bot.db.exec(
-                f'''UPDATE "{self.config["db_table"]}" SET aliases=$2 WHERE name=$1''',
-                real_name, aliases
+                f'''UPDATE "{self.config["db_table"]}" SET aliases=$2 WHERE name=$1''', real_name, aliases
             )
 
             await self.fetch_factoids(refresh=True)
             return await ctx.send(f'Alias "{name}" for "{real_name}" has been renamed to "{new_name}".')
         else:
-            await self.bot.db.exec(
-                f'''UPDATE "{self.config["db_table"]}" SET name=$2 WHERE name=$1''',
-                name, new_name
-            )
+            await self.bot.db.exec(f'''UPDATE "{self.config["db_table"]}" SET name=$2 WHERE name=$1''', name, new_name)
 
             await self.fetch_factoids(refresh=True)
             return await ctx.send(f'Factoid "{name}" has been renamed to "{new_name}".')
@@ -287,7 +290,8 @@ class Factoids(Cog):
 
         await self.bot.db.exec(
             f'''UPDATE "{self.config["db_table"]}" SET aliases=$2 WHERE name=$1''',
-            _name, self.factoids[_name]['aliases']
+            _name,
+            self.factoids[_name]['aliases'],
         )
 
         await self.fetch_factoids(refresh=True)
@@ -305,8 +309,7 @@ class Factoids(Cog):
         aliases = [i for i in self.factoids[real_name]['aliases'] if i != alias]
 
         await self.bot.db.exec(
-            f'''UPDATE "{self.config["db_table"]}" SET aliases=$2 WHERE name=$1''',
-            real_name, aliases
+            f'''UPDATE "{self.config["db_table"]}" SET aliases=$2 WHERE name=$1''', real_name, aliases
         )
 
         await self.fetch_factoids(refresh=True)
@@ -329,8 +332,7 @@ class Factoids(Cog):
             embed_status = yesno
 
         await self.bot.db.exec(
-            f'''UPDATE "{self.config["db_table"]}" SET embed=$2 WHERE name=$1''',
-            _name, embed_status
+            f'''UPDATE "{self.config["db_table"]}" SET embed=$2 WHERE name=$1''', _name, embed_status
         )
 
         await self.fetch_factoids(refresh=True)
@@ -348,10 +350,7 @@ class Factoids(Cog):
         if not factoid['embed']:
             return await ctx.send(f'The specified factoid ("{name}") is not en embed!')
 
-        await self.bot.db.exec(
-            f'''UPDATE "{self.config["db_table"]}" SET image_url=$2 WHERE name=$1''',
-            _name, url
-        )
+        await self.bot.db.exec(f'''UPDATE "{self.config["db_table"]}" SET image_url=$2 WHERE name=$1''', _name, url)
 
         await self.fetch_factoids(refresh=True)
         return await ctx.send(f'Image URL for "{name}" set to {url}')
@@ -364,8 +363,7 @@ class Factoids(Cog):
 
         factoid = self.factoids[_name]
         message = factoid["message"].replace('`', '\\`') if factoid["message"] else '<no message>'
-        embed = Embed(title=f'Factoid information: {_name}',
-                      description=f'```{message}```')
+        embed = Embed(title=f'Factoid information: {_name}', description=f'```{message}```')
         if factoid['aliases']:
             embed.add_field(name='Aliases', value=', '.join(factoid['aliases']))
         embed.add_field(name='Uses (since 2018-06-07)', value=str(factoid['uses']))
@@ -378,8 +376,7 @@ class Factoids(Cog):
     async def top(self, ctx: Context):
         embed = Embed(title='Top Factoids')
         description = ['Pos - Factoid (uses)', '--------------------------------']
-        for pos, fac in enumerate(sorted(self.factoids.values(), key=lambda a: a['uses'],
-                                         reverse=True)[:10], start=1):
+        for pos, fac in enumerate(sorted(self.factoids.values(), key=lambda a: a['uses'], reverse=True)[:10], start=1):
             description.append(f'{pos:2d}. - {fac["name"]} ({fac["uses"]})')
         embed.description = '```{}```'.format('\n'.join(description))
         return await ctx.send(embed=embed)

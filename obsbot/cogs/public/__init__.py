@@ -6,5 +6,5 @@ cogs = [
     'log_analysis',
     'webhooks',
     # 'onlybans',
-    'steamworks'
+    'steamworks',
 ]

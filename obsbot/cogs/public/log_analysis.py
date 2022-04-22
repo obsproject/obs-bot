@@ -20,7 +20,7 @@ _insert_query = '''INSERT INTO "{}" (gpu_id, cpu_id, name, counts) VALUES ($1, $
 
 
 class LogAnalyser(Cog):
-    _analysis_colour = 0x5a7474
+    _analysis_colour = 0x5A7474
     _potato = '🥔'
     _log_download_failed = '❗️'
     _log_analyser_failed = '❌'
@@ -30,7 +30,7 @@ class LogAnalyser(Cog):
         'https://obsproject.com/logs/',
         'https://hastebin.com/',
         'https://pastebin.com/',
-        'https://obsproject.com/tools/analyzer'
+        'https://obsproject.com/tools/analyzer',
     )
 
     def __init__(self, bot, config):
@@ -53,10 +53,13 @@ class LogAnalyser(Cog):
         self.channel_blacklist = set(self.config.get('channel_blacklist', {}))
 
         if admin := self.bot.get_cog('Admin'):
-            admin.add_help_section('Log Analyser', [
-                ('.togglehwcheck', 'Enable/Disable hardware check'),
-                ('.tophardware', 'List most commonly seen CPUs and GPUs'),
-            ])
+            admin.add_help_section(
+                'Log Analyser',
+                [
+                    ('.togglehwcheck', 'Enable/Disable hardware check'),
+                    ('.tophardware', 'List most commonly seen CPUs and GPUs'),
+                ],
+            )
 
     @Cog.listener()
     async def on_message(self, msg: Message):
@@ -150,7 +153,7 @@ class LogAnalyser(Cog):
                     return await react(self._log_analyser_failed)
 
             anal_url = f'https://obsproject.com/tools/analyzer?log_url={urlencode(log_url)}'
-            embed = Embed(colour=Colour(0x5a7474), url=anal_url)
+            embed = Embed(colour=Colour(0x5A7474), url=anal_url)
 
             def pretty_print_messages(msgs):
                 ret = []
@@ -159,36 +162,34 @@ class LogAnalyser(Cog):
                 return '\n'.join(ret)
 
             if log_analysis['critical']:
-                embed.add_field(name="🛑 Critical",
-                                value=pretty_print_messages(log_analysis['critical']))
+                embed.add_field(name="🛑 Critical", value=pretty_print_messages(log_analysis['critical']))
             if log_analysis['warning']:
-                embed.add_field(name="⚠️ Warning",
-                                value=pretty_print_messages(log_analysis['warning']))
+                embed.add_field(name="⚠️ Warning", value=pretty_print_messages(log_analysis['warning']))
             if log_analysis['info']:
-                embed.add_field(name="ℹ️ Info",
-                                value=pretty_print_messages(log_analysis['info']))
+                embed.add_field(name="ℹ️ Info", value=pretty_print_messages(log_analysis['info']))
 
             # do local hardware check/stats collection and include results if enabled
             hw_results = await self.match_hardware(log_content)
             if self.bot.state.get('hw_check_enabled', False):
                 if hardware_check_msg := self.hardware_check(hw_results):
-                    embed.add_field(name='Hardware Check', inline=False,
-                                    value=' / '.join(hardware_check_msg))
+                    embed.add_field(name='Hardware Check', inline=False, value=' / '.join(hardware_check_msg))
 
             # include filtered log in case SE or FTL spam is detected
-            if 'obsproject.com' in log_url and any(elem in log_content for
-                                                   elem in self._filtered_log_needles):
+            if 'obsproject.com' in log_url and any(elem in log_content for elem in self._filtered_log_needles):
                 clean_url = log_url.replace('obsproject.com', 'obsbot.rodney.io')
-                embed.description = f'*Log contains debug messages (browser/ftl/etc), ' \
-                                    f'for a filtered version [click here]({clean_url})*\n'
+                embed.description = (
+                    f'*Log contains debug messages (browser/ftl/etc), '
+                    f'for a filtered version [click here]({clean_url})*\n'
+                )
 
             row = ActionRow()
             row.add_button(style=ButtonStyle.link, label='Solutions / Full Analysis', url=anal_url)
             return await msg.channel.send(embed=embed, reference=msg, mention_author=True, components=row)
 
     async def fetch_log_analysis(self, url):
-        async with self.bot.session.get('https://obsproject.com/analyzer-api/',
-                                        params=dict(url=url, format='json')) as r:
+        async with self.bot.session.get(
+            'https://obsproject.com/analyzer-api/', params=dict(url=url, format='json')
+        ) as r:
             if r.status == 200:
                 j = await r.json()
                 # check if analysis response is actually valid
@@ -265,8 +266,7 @@ class LogAnalyser(Cog):
         return hw_heck_msg
 
     async def match_hardware(self, log_content):
-        res = dict(cpu_name='', cpu_bench=None,
-                   gpu_name='', gpu_bench=None)
+        res = dict(cpu_name='', cpu_bench=None, gpu_name='', gpu_bench=None)
 
         # most of this is old an ugly and probably needs a rewrite.
         # check if video initialization even happens in log
@@ -277,13 +277,13 @@ class LogAnalyser(Cog):
                     res['cpu_name'] = cpu
 
                     # find CPU in DB, first remove certain nonsense that makes matching harder
-                    cpu_parts = cpu.lower().replace('(tm)', '').replace('(r)', '')\
-                        .replace('-', ' ').replace('@', ' ').split()
+                    cpu_parts = (
+                        cpu.lower().replace('(tm)', '').replace('(r)', '').replace('-', ' ').replace('@', ' ').split()
+                    )
                     # iterate over benchmark data and find closest match
                     best_match = (0, None)
                     for cpu_bench in self.benchmark_data['cpus']:
-                        bench_parts = [p for p in cpu_bench['name_lower'].split()
-                                       if p not in ('-', '(', ')')]
+                        bench_parts = [p for p in cpu_bench['name_lower'].split() if p not in ('-', '(', ')')]
                         s = sum(i in bench_parts for i in cpu_parts)
                         if s > best_match[0]:
                             logger.debug(f'[CPU] New best match (score: {s}): {cpu} => {cpu_bench["name"]}')
@@ -316,13 +316,11 @@ class LogAnalyser(Cog):
 
                     res['gpu_name'] = gpu
                     # Find GPU in DB, first remove certain nonsense that makes matching harder
-                    gpu_parts = gpu.lower().replace('(tm)', '').replace('(r)', '') \
-                        .replace('/', ' ').split()
+                    gpu_parts = gpu.lower().replace('(tm)', '').replace('(r)', '').replace('/', ' ').split()
                     # iterate over benchmark data and find closest match
                     best_match = (0, None)
                     for gpu_bench in self.benchmark_data['gpus']:
-                        bench_parts = [p for p in gpu_bench['name_lower'].split()
-                                       if p not in ('-', '(', ')')]
+                        bench_parts = [p for p in gpu_bench['name_lower'].split() if p not in ('-', '(', ')')]
                         s = sum(i in bench_parts for i in gpu_parts)
                         if s > best_match[0]:
                             logger.debug(f'[GPU] New best match (score: {s}): {gpu} => {gpu_bench["name"]}')
@@ -381,11 +379,9 @@ class LogAnalyser(Cog):
         logger.info(f'Received {len(res)} hardware stats entries from DB.')
         for record in res:
             if record['gpu_id']:
-                self.hardware_stats['gpu'][record['gpu_id']] = dict(name=record['name'],
-                                                                    count=record['counts'])
+                self.hardware_stats['gpu'][record['gpu_id']] = dict(name=record['name'], count=record['counts'])
             elif record['cpu_id']:
-                self.hardware_stats['cpu'][record['cpu_id']] = dict(name=record['name'],
-                                                                    count=record['counts'])
+                self.hardware_stats['cpu'][record['cpu_id']] = dict(name=record['name'], count=record['counts'])
 
     @command()
     async def togglehwcheck(self, ctx: Context):
@@ -400,14 +396,16 @@ class LogAnalyser(Cog):
         embed = Embed(title='Top Hardware')
 
         cpus = []
-        for pos, cpu in enumerate(sorted(self.hardware_stats['cpu'].values(),
-                                         key=lambda a: a['count'], reverse=True)[:10], start=1):
+        for pos, cpu in enumerate(
+            sorted(self.hardware_stats['cpu'].values(), key=lambda a: a['count'], reverse=True)[:10], start=1
+        ):
             cpus.append(f'{pos:2d}. - {cpu["name"]} ({cpu["count"]})')
         embed.add_field(name='CPUs', value='```{}```'.format('\n'.join(cpus)), inline=False)
 
         gpus = []
-        for pos, gpu in enumerate(sorted(self.hardware_stats['gpu'].values(),
-                                         key=lambda a: a['count'], reverse=True)[:10], start=1):
+        for pos, gpu in enumerate(
+            sorted(self.hardware_stats['gpu'].values(), key=lambda a: a['count'], reverse=True)[:10], start=1
+        ):
             gpus.append(f'{pos:2d}. - {gpu["name"]} ({gpu["count"]})')
         embed.add_field(name='GPUs', value='```{}```'.format('\n'.join(gpus)), inline=False)
 

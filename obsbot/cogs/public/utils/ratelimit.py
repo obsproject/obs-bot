@@ -3,6 +3,7 @@ import time
 
 class RateLimiter:
     """Custom rate limiter for factoids/log analysis"""
+
     def __init__(self, cooldown=5.0):
         self.cache = dict()
         self.cooldown = cooldown

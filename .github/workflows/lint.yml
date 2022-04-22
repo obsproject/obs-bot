@@ -3,17 +3,26 @@ name: Lint
 on: [push, pull_request]
 
 jobs:
-  lint:
+  flake8:
     name: Flake8
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions/setup-python@v2
         with:
           python-version: "3.8"
+
       - name: Run flake8
         uses: julianwachholz/flake8-action@v2
         with:
           checkName: "Flake8"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  black:
+    name: Black
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable

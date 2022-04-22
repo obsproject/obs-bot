@@ -34,11 +34,8 @@ class Admin(Cog):
             if section in self.restricted and not is_private:
                 continue
             longest = max(len(cmd) for cmd, _ in commands)
-            content = '\n'.join(f'{cmd.ljust(longest)} - {helptext}'
-                                for cmd, helptext in commands)
-            embed.add_field(name=section,
-                            value=f'```{content}```',
-                            inline=False)
+            content = '\n'.join(f'{cmd.ljust(longest)} - {helptext}' for cmd, helptext in commands)
+            embed.add_field(name=section, value=f'```{content}```', inline=False)
         return await ctx.channel.send(embed=embed)
 
     @command()
@@ -47,9 +44,14 @@ class Admin(Cog):
             return
 
         embed = Embed(title='OBS Bot Status')
-        embed.add_field(name='Core', inline=False,
-                        value=(f'Version:  {__version__} - "{__codename__}" Edition\n'
-                               f'Uptime:  {time.time() - self.bot.start_time:.0f} seconds\n'))
+        embed.add_field(
+            name='Core',
+            inline=False,
+            value=(
+                f'Version:  {__version__} - "{__codename__}" Edition\n'
+                f'Uptime:  {time.time() - self.bot.start_time:.0f} seconds\n'
+            ),
+        )
 
         mentions = ', '.join(u.mention for u in (self.bot.get_user(_id) for _id in self.bot.admins) if u)
         embed.add_field(name='Bot admins', inline=False, value=mentions)
@@ -57,24 +59,37 @@ class Admin(Cog):
         # get information from other Cogs if possible
         if fac := self.bot.get_cog('Factoids'):
             total_uses = sum(i['uses'] for i in fac.factoids.values())
-            embed.add_field(name='Factoid module', inline=False,
-                            value=(f'Factoids:  {len(fac.factoids)}\n'
-                                   f'Aliases:  {len(fac.alias_map)}\n'
-                                   f'Total uses:  {total_uses} (since 2018-06-07)'))
+            embed.add_field(
+                name='Factoid module',
+                inline=False,
+                value=(
+                    f'Factoids:  {len(fac.factoids)}\n'
+                    f'Aliases:  {len(fac.alias_map)}\n'
+                    f'Total uses:  {total_uses} (since 2018-06-07)'
+                ),
+            )
 
         if _ := self.bot.get_cog('Cron'):
-            embed.add_field(name='Cron module', inline=False,
-                            value=f'Last Fider ID: {self.bot.state["fider_last_id"]}\n'
-                                  f'Last Twitter ID: {self.bot.state["twitter_last_id"]}')
+            embed.add_field(
+                name='Cron module',
+                inline=False,
+                value=f'Last Fider ID: {self.bot.state["fider_last_id"]}\n'
+                f'Last Twitter ID: {self.bot.state["twitter_last_id"]}',
+            )
 
         if lag := self.bot.get_cog('LogAnalyser'):
             bench_cpus = len(lag.benchmark_data["cpus"])
             bench_gpus = len(lag.benchmark_data["gpus"])
             stats_cpus = len(lag.hardware_stats["cpu"])
             stats_gpus = len(lag.hardware_stats["gpu"])
-            embed.add_field(name='Log Analyser module', inline=False,
-                            value=(f'Benchmark DB: {bench_cpus} CPUs, {bench_gpus} GPUs\n'
-                                   f'Hardware Stats: {stats_cpus} CPUs, {stats_gpus} GPUs'))
+            embed.add_field(
+                name='Log Analyser module',
+                inline=False,
+                value=(
+                    f'Benchmark DB: {bench_cpus} CPUs, {bench_gpus} GPUs\n'
+                    f'Hardware Stats: {stats_cpus} CPUs, {stats_gpus} GPUs'
+                ),
+            )
 
         return await ctx.channel.send(embed=embed)
 
