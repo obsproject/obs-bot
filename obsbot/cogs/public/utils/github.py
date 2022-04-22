@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 
-from typing import Generator
+from typing import Generator, Tuple
 
 import dateutil.parser
 from disnake import Embed, Colour
@@ -85,7 +85,7 @@ class GitHubHelper:
         return embed_commits
 
     @staticmethod
-    def _format_embed(message_body) -> Generator[str, str]:
+    def _format_embed(message_body) -> Generator[Tuple[str, str], None, None]:
         sections = message_body.split("###")[1:]
 
         for section in sections:
