@@ -124,7 +124,7 @@ class OBSBot(commands.Bot):
             and not self.is_supporter(message.author)
         ):
             await message.channel.send(
-                'DMs are not monitored, please use the support ' 'channels in discord.gg/obsproject instead.'
+                'DMs are not monitored, please use the support channels in discord.gg/obsproject instead.'
             )
         else:
             await self.process_commands(message)
