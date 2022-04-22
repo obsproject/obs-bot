@@ -3,7 +3,7 @@ import json
 import random
 
 from asyncio import TimeoutError
-from urllib.parse import quote_plus as urlencode
+from urllib.parse import parse_qs, urlparse, quote_plus as urlencode
 
 from aiohttp import ClientResponseError
 from disnake import Message, Embed, Colour
@@ -26,7 +26,12 @@ class LogAnalyser(Cog):
     _log_analyser_failed = '❌'
 
     _filtered_log_needles = ('obs-streamelements.dll', 'ftl_stream_create')
-    _log_hosts = ('https://obsproject.com/logs/', 'https://hastebin.com/', 'https://pastebin.com/')
+    _log_hosts = (
+        'https://obsproject.com/logs/',
+        'https://hastebin.com/',
+        'https://pastebin.com/',
+        'https://obsproject.com/tools/analyzer'
+    )
 
     def __init__(self, bot, config):
         self.bot = bot
@@ -75,8 +80,12 @@ class LogAnalyser(Cog):
         # links in message
         for part in [p.strip() for p in msg.content.split()]:
             if any(part.startswith(lh) for lh in self._log_hosts):
-                if 'obsproject.com' in part:
+                if 'obsproject.com/logs/' in part:
                     url = part
+                elif 'obsproject.com/tools/analyzer' in part:
+                    parsed = urlparse(part)
+                    if log_url := parse_qs(parsed.query).get('log_url', [None])[0]:
+                        url = log_url
                 elif 'hastebin.com' in part:
                     hastebin_id = part.rsplit('/', 1)[1]
                     if not hastebin_id:
