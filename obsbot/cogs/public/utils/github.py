@@ -95,7 +95,7 @@ class GitHubHelper:
             if body == '_No response_':
                 continue
             # replace checkboxes with emotes
-            body = body.replace('[x]', ':ballot_box_with_check:').replace('[ ]', ':x:')
+            body = body.replace('- [x]', ':ballot_box_with_check:').replace('- [ ]', ':x:')
             # make sure body does not exceed field length (1024)
             if len(body) >= 1024:
                 body = body[:1000] + ' [... message trimmed]'
