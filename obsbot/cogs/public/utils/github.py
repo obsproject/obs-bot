@@ -128,12 +128,13 @@ class GitHubHelper:
         brief_embed = embed.copy()
         brief_embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
-        # filter out comments in template
-        pr_body = '\n'.join(
-            l.strip() for l in event_body['pull_request']['body'].splitlines() if not l.startswith('<!-')
-        )
-        for name, value in self._format_embed(pr_body):
-            embed.add_field(name=name, value=value, inline=False)
+        if event_body['pull_request']['body']:
+            # filter out comments in template
+            pr_body = '\n'.join(
+                l.strip() for l in event_body['pull_request']['body'].splitlines() if not l.startswith('<!-')
+            )
+            for name, value in self._format_embed(pr_body):
+                embed.add_field(name=name, value=value, inline=False)
 
         embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
@@ -165,11 +166,14 @@ class GitHubHelper:
         brief_embed = embed.copy()
         brief_embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
-        # filter out comments
-        issue_body = '\n'.join(l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-'))
+        if event_body['issue']['body']:
+            # filter out comments
+            issue_body = '\n'.join(
+                l.strip() for l in event_body['issue']['body'].splitlines() if not l.startswith('<!-')
+            )
 
-        for name, value in self._format_embed(issue_body):
-            embed.add_field(name=name, value=value, inline=False)
+            for name, value in self._format_embed(issue_body):
+                embed.add_field(name=name, value=value, inline=False)
 
         embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
