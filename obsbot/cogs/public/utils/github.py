@@ -86,13 +86,16 @@ class GitHubHelper:
 
     @staticmethod
     def _format_embed(message_body) -> Generator[Tuple[str, str], None, None]:
-        sections = message_body.split("###")[1:]
+        sections = message_body.split("###")
+        
+        if pre_template := sections[0].strip():
+            yield '', pre_template
 
-        for section in sections:
+        for section in sections[1:]:
             name, body = section.partition('\n')[::2]
             # strip trailing and leading newlines/whitespace
             name, body = name.strip(), body.strip()
-            if not body or body == '_No response_':
+            if not name or not body or body == '_No response_':
                 continue
             # replace checkboxes with emotes
             body = body.replace('- [x]', ':ballot_box_with_check:').replace('- [ ]', ':x:')
@@ -134,7 +137,10 @@ class GitHubHelper:
                 l.strip() for l in event_body['pull_request']['body'].splitlines() if not l.startswith('<!-')
             )
             for name, value in self._format_embed(pr_body):
-                embed.add_field(name=name, value=value, inline=False)
+                if name:
+                    embed.add_field(name=name, value=value, inline=False)
+                else:
+                    embed.description = value
 
         embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
@@ -173,7 +179,10 @@ class GitHubHelper:
             )
 
             for name, value in self._format_embed(issue_body):
-                embed.add_field(name=name, value=value, inline=False)
+                if name:
+                    embed.add_field(name=name, value=value, inline=False)
+                else:
+                    embed.description = value
 
         embed.add_field(name='Repository', value=event_body['repository']['full_name'], inline=True)
 
