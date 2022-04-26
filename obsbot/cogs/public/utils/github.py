@@ -87,7 +87,7 @@ class GitHubHelper:
     @staticmethod
     def _format_embed(message_body) -> Generator[Tuple[str, str], None, None]:
         sections = message_body.split("###")
-        
+
         if pre_template := sections[0].strip():
             yield '', pre_template
 
