@@ -35,7 +35,7 @@ class Admin(Cog):
         for section, commands in self.help_sections.items():
             if section in self.restricted and not is_private:
                 continue
-            if requested_section and not section.lower().startswith(requested_section):
+            if requested_section and requested_section not in section.lower():
                 continue
             longest = max(len(cmd) for cmd, _ in commands)
             content = '\n'.join(f'{cmd.ljust(longest)} - {helptext}' for cmd, helptext in commands)
