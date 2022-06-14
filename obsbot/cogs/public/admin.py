@@ -14,7 +14,7 @@ class Admin(Cog):
         self.bot = bot
         self.help_sections = {
             'Administrative': [
-                ('.help', 'Display this help'),
+                ('.help [section]', 'Display this help, optionally filter by section'),
                 ('.status', 'prints the bot\'s current status'),
                 ('.setgame', 'Set the bot\'s "Playing ..." status'),
                 ('.setsong', 'Set the bot\'s "Listening to ..." status'),
@@ -23,19 +23,27 @@ class Admin(Cog):
         self.restricted = set()
 
     @command()
-    async def help(self, ctx: Context):
+    async def help(self, ctx: Context, requested_section: str = None):
         # unfortunately the @check decorator doesn't really work for this use case.
         if not self.bot.is_admin(ctx.author):
             return
+        if requested_section:
+            requested_section = requested_section.strip().lower()
         is_private = self.bot.is_private(ctx.channel)
 
         embed = Embed(title='OBS Bot Help')
         for section, commands in self.help_sections.items():
             if section in self.restricted and not is_private:
                 continue
+            if requested_section and not section.lower().startswith(requested_section):
+                continue
             longest = max(len(cmd) for cmd, _ in commands)
             content = '\n'.join(f'{cmd.ljust(longest)} - {helptext}' for cmd, helptext in commands)
             embed.add_field(name=section, value=f'```{content}```', inline=False)
+
+        if len(embed.fields) == 0:
+            return await ctx.channel.send(f'Help section "{requested_section}" not found.')
+
         return await ctx.channel.send(embed=embed)
 
     @command()
