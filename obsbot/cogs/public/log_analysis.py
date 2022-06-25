@@ -71,7 +71,7 @@ class LogAnalyser(Cog):
             )
 
     @Cog.listener()
-    async def on_message(self, msg: Message):
+    async def on_filtered_message(self, msg: Message):
         # check if channel is in blacklist, has possible log urls, or an attachment
         if msg.channel.id in self.channel_blacklist:
             return

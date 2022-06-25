@@ -145,10 +145,7 @@ class Factoids(Cog):
             return await ctx.send(content=message, embed=embed)
 
     @Cog.listener()
-    async def on_message(self, msg: Message):
-        # ignore our own messages
-        if msg.author == self.bot.user:
-            return
+    async def on_filtered_message(self, msg: Message):
         if not msg.content or len(msg.content) < 2 or msg.content[0] != '!':
             return
         msg_parts = msg.content[1:].split()
