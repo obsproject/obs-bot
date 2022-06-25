@@ -295,15 +295,14 @@ class OnlyBans(Cog):
         self.bot.state['mod_falsepositive_ts'] = now
         await ctx.send(f'Clock was reset after {delta_days:.0f} days {delta_hours:.0f} hours.')
 
-    @Cog.listener()
-    async def on_message(self, msg: Message):
+    async def run_message_filters(self, msg: Message) -> bool:
         if not self.filtering_enabled:
-            return
+            return False
         # check if channel is in private (these are ignored)
         if self.bot.is_private(msg.channel):
-            return
+            return False
         if self.bot.is_supporter(msg.author):
-            return
+            return False
 
         # go through bannable rules first, then kickable, then just delete
         for name, regex in self.sorted_filters:
@@ -311,7 +310,7 @@ class OnlyBans(Cog):
             if m:
                 break
         else:  # no filter match
-            return
+            return False
 
         try:
             await msg.delete()
@@ -363,7 +362,18 @@ class OnlyBans(Cog):
         else:
             logger.info(f'Deleted message by {msg.author.id}; Message {msg.id} matched filter "{name}"')
 
-        return await self.log_channel.send(embed=embed)
+        await self.log_channel.send(embed=embed)
+        return True
+
+    @Cog.listener()
+    async def on_message(self, msg: Message):
+        if msg.author == self.bot.user:
+            return
+        # if any filters hit, do not forward the message
+        if self.run_message_filters(msg):
+            return
+
+        self.bot.dispatch('filtered_message', msg)
 
 
 def setup(bot):
