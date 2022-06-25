@@ -370,7 +370,7 @@ class OnlyBans(Cog):
         if msg.author == self.bot.user:
             return
         # if any filters hit, do not forward the message
-        if self.run_message_filters(msg):
+        if await self.run_message_filters(msg):
             return
 
         self.bot.dispatch('filtered_message', msg)
