@@ -25,7 +25,16 @@ class LogAnalyser(Cog):
     _log_download_failed = '❗️'
     _log_analyser_failed = '❌'
 
-    _filtered_log_needles = ('obs-streamelements.dll', 'ftl_stream_create')
+    _filtered_log_needles = (
+        # SE Plugin
+        'obs-streamelements.dll',
+        # FTL streams
+        'ftl_stream_create',
+        # capture device issues
+        'Found EOI before any SOF, ignoring',
+        'No JPEG data found in image',
+        'Error decoding video',
+    )
     _log_hosts = (
         'https://obsproject.com/logs/',
         'https://hastebin.com/',
@@ -178,7 +187,7 @@ class LogAnalyser(Cog):
             if 'obsproject.com' in log_url and any(elem in log_content for elem in self._filtered_log_needles):
                 clean_url = log_url.replace('obsproject.com', 'obsbot.rodney.io')
                 embed.description = (
-                    f'*Log contains debug messages (browser/ftl/etc), '
+                    f'*Log contains debug or verbose error messages (browser/ftl/directshow/etc), '
                     f'for a filtered version [click here]({clean_url})*\n'
                 )
 
