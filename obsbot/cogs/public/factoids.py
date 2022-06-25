@@ -16,7 +16,8 @@ class Factoids(Cog):
         self.alias_map = dict()
         self.factoids = dict()
         self.config = config
-        self.limiter = RateLimiter(self.config.get('cooldown', 20.0))
+        self.member_limiter = RateLimiter(self.config.get('cooldown', 20.0))
+        self.channel_limiter = RateLimiter(self.config.get('cooldown', 20.0))
 
         self.initial_commands_sync_done = False
 
@@ -122,7 +123,10 @@ class Factoids(Cog):
         return factoid_message
 
     async def slash_factoid(self, ctx: ApplicationCommandInteraction, mention: Member = None):
-        if not self.bot.is_supporter(ctx.author) and self.limiter.is_limited(ctx.data.id, ctx.channel_id):
+        if not self.bot.is_supporter(ctx.author) and (
+            self.member_limiter.is_limited(ctx.data.id, ctx.author.id)
+            or self.channel_limiter.is_limited(ctx.data.id, ctx.channel.id)
+        ):
             logger.debug(f'rate-limited (sc): "{ctx.author}", channel: "{ctx.channel}", factoid: "{ctx.data.name}"')
             return
 
@@ -159,7 +163,10 @@ class Factoids(Cog):
             else:  # factoid does not exit
                 return
 
-        if not self.bot.is_supporter(msg.author) and self.limiter.is_limited(factoid_name, msg.channel.id):
+        if not self.bot.is_supporter(msg.author) and (
+            self.member_limiter.is_limited(factoid_name, msg.author.id)
+            or self.channel_limiter.is_limited(factoid_name, msg.channel.id)
+        ):
             logger.debug(f'rate-limited: "{msg.author}", channel: "{msg.channel}", factoid: "{factoid_name}"')
             return
 
@@ -175,7 +182,7 @@ class Factoids(Cog):
         # if users are mentioned (but it's not a reply), mention them in the bot reply as well
         user_mention = None
         if msg.mentions and not msg.reference:
-            user_mention = ' '.join(user.mention for user in msg.mentions)
+            user_mention = msg.mentions[0].mention
 
         embed = None
         if factoid['embed']:
