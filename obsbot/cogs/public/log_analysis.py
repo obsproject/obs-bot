@@ -26,6 +26,7 @@ class LogAnalyser(Cog):
     _log_analyser_failed = '❌'
 
     _filtered_log_needles = ('obs-streamelements.dll', 'ftl_stream_create')
+    _filtered_log_brokenvideocapture = ('warning: Found EOI before any SOF, ignoring', 'fatal:   No JPEG data found in image', 'Error decoding video')
     _log_hosts = (
         'https://obsproject.com/logs/',
         'https://hastebin.com/',
@@ -174,11 +175,24 @@ class LogAnalyser(Cog):
                 if hardware_check_msg := self.hardware_check(hw_results):
                     embed.add_field(name='Hardware Check', inline=False, value=' / '.join(hardware_check_msg))
 
-            # include filtered log in case SE or FTL spam is detected
-            if 'obsproject.com' in log_url and any(elem in log_content for elem in self._filtered_log_needles):
+            # include filtered log in case SE, FTL, or broken video capture device spam is detected
+			if 'obsproject.com' in log_url and any(elem in log_content for elem in self._filtered_log_needles) and any(elem in log_content for elem in self._filtered_log_brokenvideocapture):
+                clean_url = log_url.replace('obsproject.com', 'obsbot.rodney.io')
+                embed.description = (
+                    f'*Log contains debug messages (browser/ftl/etc) '
+                    f'and a broken video capture device, '
+                    f'for a filtered version [click here]({clean_url})*\n'
+                )
+            else if 'obsproject.com' in log_url and any(elem in log_content for elem in self._filtered_log_needles):
                 clean_url = log_url.replace('obsproject.com', 'obsbot.rodney.io')
                 embed.description = (
                     f'*Log contains debug messages (browser/ftl/etc), '
+                    f'for a filtered version [click here]({clean_url})*\n'
+                )
+			else if 'obsproject.com' in log_url and any(elem in log_content for elem in self._filtered_log_brokenvideocapture):
+				clean_url = log_url.replace('obsproject.com', 'obsbot.rodney.io')
+                embed.description = (
+                    f'*A broken video capture device is present, '
                     f'for a filtered version [click here]({clean_url})*\n'
                 )
 
