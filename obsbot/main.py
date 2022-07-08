@@ -19,7 +19,14 @@ logger = logging.getLogger(__name__)
 class OBSBot(commands.Bot):
     def __init__(self, config_file):
         intents = disnake.Intents(
-            bans=True, emojis=True, guilds=True, members=True, messages=True, reactions=True, voice_states=False
+            bans=True,
+            emojis=True,
+            guilds=True,
+            members=True,
+            messages=True,
+            reactions=True,
+            voice_states=False,
+            message_content=True,
         )
         super().__init__(command_prefix='.', help_command=None, intents=intents)  # type: ignore
 
