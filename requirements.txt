@@ -1,5 +1,5 @@
 asyncpg>=0.21.0
-disnake>=2.4.0
+disnake>=2.5.0
 toml>=0.10.2
 peony-twitter>=2.0.0
 dateutils>0.6.0
