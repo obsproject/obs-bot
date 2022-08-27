@@ -1,8 +1,13 @@
 import logging
+import json
 
-from disnake import Message, Embed, Member, ApplicationCommandInteraction
+from disnake import Message, Embed, Member, ApplicationCommandInteraction, MessageInteraction
+from disnake.enums import ButtonStyle
 from disnake.ext.commands import Cog, command, Context, InvokableSlashCommand
+from disnake.ui.action_row import ActionRow
+from disnake.ui.select import Select
 
+from obsbot.main import OBSBot
 from .utils.ratelimit import RateLimiter
 
 logger = logging.getLogger(__name__)
@@ -11,12 +16,17 @@ logger = logging.getLogger(__name__)
 class Factoids(Cog):
     _factoids_colour = 0x36393E
 
-    def __init__(self, bot, config):
+    def __init__(self, bot: OBSBot, config):
         self.bot = bot
         self.alias_map = dict()
         self.factoids = dict()
         self.config = config
         self.limiter = RateLimiter(self.config.get('cooldown', 20.0))
+
+        # Dialog tree stuff
+        self.nodes = dict()
+        self.root_message = None
+        self.root_node = None
 
         self.initial_commands_sync_done = False
 
@@ -46,6 +56,7 @@ class Factoids(Cog):
                     ('.top', 'Print most used commands'),
                     ('.bottom', 'Print least used commands'),
                     ('.unused', 'Print unused commands'),
+                    ('.reload_tree', 'Reload dialog tree'),
                 ],
             )
 
@@ -107,6 +118,84 @@ class Factoids(Cog):
             self.bot._schedule_delayed_command_sync()
 
         self.initial_commands_sync_done = True
+
+    async def load_tree(self):
+        try:
+            j = json.load(open(self.config['selfservice_tree']))
+        except Exception as e:
+            logger.error(f'Failed loading tree file: {e!r}')
+            return
+
+        self.nodes.clear()
+
+        for node in j:
+            if node['type'] == 'Node' and node['actor'] == '__root':
+                self.root_node = node
+            self.nodes[node['id']] = node
+
+    async def setup_self_service(self):
+        await self.load_tree()
+        if not self.nodes:
+            logger.info('No nodes, self-service help disabled.')
+            return
+
+        await self.bot.wait_until_ready()
+        ss_channel = self.bot.get_channel(self.config['selfservice_channel'])
+
+        ss_message = None
+        if ss_msg_id := self.bot.state.get('ss_message', None):
+            try:
+                ss_message = await ss_channel.fetch_message(ss_msg_id)
+            except Exception as e:
+                logger.warning(f'Couldn\'t find root message: {e!r}')
+
+        choices = self.get_choices(self.root_node['id'])
+        embed = Embed(description=self.root_node['name'])
+        row = ActionRow()
+        opts = Select(custom_id='selfhelp_root', placeholder='Select a topic...', options=choices)
+        row.append_item(opts)
+
+        if ss_message:
+            ss_message = await ss_message.edit(embed=embed, components=row)
+        else:
+            ss_message = await ss_channel.send(embed=embed, components=row)
+
+        self.bot.state['ss_message'] = ss_message.id
+
+    def get_choices(self, node_id) -> dict:
+        choices = dict()
+
+        node = self.nodes.get(node_id)
+        if not node:
+            return choices
+
+        for choice_id in node.get('choices', []):
+            _node = self.nodes.get(choice_id)
+            if not _node:
+                continue
+            choices[_node['title']] = choice_id
+
+        return choices
+
+    def get_node_embed(self, node):
+        embed = Embed()
+        if node['type'] == 'Node' and node['actor'] == '__factoid':
+            factoid_name = node['name']
+            if factoid_name not in self.factoids:
+                if factoid_name in self.alias_map:
+                    factoid_name = self.alias_map[factoid_name]
+                else:
+                    # todo send error message if factoid doesn't exist
+                    return embed
+
+            factoid = self.factoids[factoid_name]
+            embed.description = factoid['message']
+            if factoid['image_url']:
+                embed.set_image(url=factoid['image_url'])
+        elif node['type'] == 'Text':
+            embed.description = node['name']
+
+        return embed
 
     def set_variable(self, variable, value):
         self.variables[variable] = value
@@ -202,6 +291,54 @@ class Factoids(Cog):
             return await msg.channel.send(
                 message, embed=embed, reference=msg_reference, mention_author=True  # type: ignore
             )
+
+    @Cog.listener()
+    async def on_button_click(self, interaction: MessageInteraction):
+        _id = interaction.data.custom_id
+        if not _id.startswith('selfhelp_'):
+            return
+        if _id == 'selfhelp_needmorehelp':
+            await interaction.response.send_message(
+                content='You have been added to #channel, please post your question there!', ephemeral=True
+            )
+
+    @Cog.listener()
+    async def on_dropdown(self, interaction: MessageInteraction):
+        _id = interaction.data.custom_id
+        if not _id.startswith('selfhelp_'):
+            return
+
+        await interaction.response.defer()
+
+        select_id = interaction.values[0]
+        cur_node = self.nodes[select_id]
+        # First embed should have a title reflecting the choice
+        first_embed_title = cur_node['title']
+        # Goto first node after the "Choice" node
+        cur_node = self.nodes[cur_node['next']]
+
+        # send embeds for every non-final node
+        while next_id := cur_node.get('next'):
+            _embed = self.get_node_embed(cur_node)
+            if first_embed_title:
+                _embed.title = first_embed_title
+                first_embed_title = None
+
+            await interaction.followup.send(embed=_embed, ephemeral=True)
+            cur_node = self.nodes.get(next_id)
+
+        # For the final node include the choices or more help button
+        row = ActionRow()
+        if choices := self.get_choices(cur_node['id']):
+            opts = Select(custom_id=f'selfhelp_{select_id}', placeholder='Select an option...', options=choices)
+            row.append_item(opts)
+        else:
+            row.add_button(style=ButtonStyle.secondary, label='I need assistance', custom_id='selfhelp_needmorehelp')
+
+        embed = self.get_node_embed(cur_node)
+        if first_embed_title:
+            embed.title = first_embed_title
+        await interaction.followup.send(embed=embed, components=row, ephemeral=True)
 
     async def increment_uses(self, factoid_name):
         return await self.bot.db.add_task(
@@ -406,11 +543,19 @@ class Factoids(Cog):
         embed.description = '```{}```'.format('\n'.join(description))
         return await ctx.send(embed=embed)
 
+    @command()
+    async def reload_tree(self, ctx: Context):
+        if not self.bot.is_admin(ctx.author):
+            return
+        await self.load_tree()
+        return await ctx.send(content="Dialog tree has been reloaded.")
+
 
 def setup(bot):
     if 'factoids' in bot.config and bot.config['factoids'].get('enabled', False):
         fac = Factoids(bot, bot.config['factoids'])
         bot.add_cog(fac)
         bot.loop.create_task(fac.fetch_factoids())
+        bot.loop.create_task(fac.setup_self_service())
     else:
         logger.info('Factoids Cog not enabled.')
