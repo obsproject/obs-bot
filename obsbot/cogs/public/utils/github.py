@@ -341,7 +341,7 @@ class GitHubHelper:
                         self.state['nightly_macos_m1'] = self.config['artifact_service'].format(artifact['id'])
                     else:
                         self.state['nightly_macos'] = self.config['artifact_service'].format(artifact['id'])
-                elif 'win-x64' in artifact['name']:
+                elif 'windows-x64' in artifact['name']:
                     self.state['nightly_windows'] = self.config['artifact_service'].format(artifact['id'])
 
             artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
