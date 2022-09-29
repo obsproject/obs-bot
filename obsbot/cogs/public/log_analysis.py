@@ -289,6 +289,10 @@ class LogAnalyser(Cog):
                     cpu_parts = (
                         cpu.lower().replace('(tm)', '').replace('(r)', '').replace('-', ' ').replace('@', ' ').split()
                     )
+                    # Newer Intel CPUs include the generation in the name, remove that
+                    if 'gen' in cpu_parts and (idx := cpu_parts.index('gen')):
+                        cpu_parts = cpu_parts[idx + 1 :]  # wtf black?!
+
                     # iterate over benchmark data and find closest match
                     best_match = (0, None)
                     for cpu_bench in self.benchmark_data['cpus']:
