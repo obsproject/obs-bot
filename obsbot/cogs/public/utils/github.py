@@ -337,14 +337,17 @@ class GitHubHelper:
             # update nightly build downloads in internal state
             if build_success and branch == 'master':
                 if 'macos' in artifact['name']:
+                    artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
+
                     if 'arm64' in artifact['name']:
                         self.state['nightly_macos_m1'] = self.config['artifact_service'].format(artifact['id'])
                     else:
                         self.state['nightly_macos'] = self.config['artifact_service'].format(artifact['id'])
                 elif 'windows-x64' in artifact['name']:
+                    artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
                     self.state['nightly_windows'] = self.config['artifact_service'].format(artifact['id'])
-
-            artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
+                elif 'flatpak' in artifact['name']:
+                    artifacts_entries.append(f'[{artifact["name"]}]({artifact["archive_download_url"]})')
 
         embed = Embed(
             title=f'Build {run["run_number"]} {build_result}',
