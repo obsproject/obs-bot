@@ -297,7 +297,7 @@ class GitHubHelper:
         jobs = jobs['jobs']
 
         total_jobs = len(jobs)
-        failed = sum(i['conclusion'] not in {'success', 'skipped'} for i in jobs)
+        failed = sum(i['conclusion'] not in {'success', 'skipped', 'cancelled'} for i in jobs)
         build_success = failed == 0
 
         if failed == 0:
@@ -320,7 +320,9 @@ class GitHubHelper:
             message.append('**Succeeded:** {}'.format(', '.join(succeeded)))
         if skipped := [job['name'] for job in jobs if job['conclusion'] == 'skipped']:
             message.append('**Skipped:** {}'.format(', '.join(skipped)))
-        if failed := [job['name'] for job in jobs if job['conclusion'] not in {'success', 'skipped'}]:
+        if skipped := [job['name'] for job in jobs if job['conclusion'] == 'cancelled']:
+            message.append('**Cancelled:** {}'.format(', '.join(skipped)))
+        if failed := [job['name'] for job in jobs if job['conclusion'] not in {'success', 'skipped', 'cancelled'}]:
             message.append('**Failed:** {}'.format(', '.join(failed)))
 
         artifacts = await self.get_with_retry(run['artifacts_url'])
