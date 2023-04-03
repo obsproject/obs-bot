@@ -67,7 +67,8 @@ class Webhooks(Cog):
                     messages.append((msg, commit_hash))
 
             # finally, save the commit message ids to the database for CI additions later
-            self.bot.loop.create_task(self.add_messages_to_db(messages))
+            if messages:
+                self.bot.loop.create_task(self.add_messages_to_db(messages))
         elif event == 'pull_request':
             # we only care about opened PRs
             if body['action'] == 'opened':
