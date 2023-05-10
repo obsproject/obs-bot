@@ -101,23 +101,35 @@ class Admin(Cog):
 
         return await ctx.channel.send(embed=embed)
 
-    @command(aliases=['changegame'])
-    async def setgame(self, ctx: Context, *, activity):
+    @command(aliases=['changegame', 'setgame'])
+    async def setplaying(self, ctx: Context, *, activity):
         if not self.bot.is_admin(ctx.author):
             return
         logger.info(f'Game changed to "{activity}" by {str(ctx.author)}')
         self.bot.state['game'] = activity
         self.bot.state['song'] = None
+        self.bot.state['stream'] = None
         return await self.bot.change_presence(activity=Game(activity))
 
-    @command(aliases=['changesong'])
-    async def setsong(self, ctx: Context, *, activity):
+    @command(aliases=['changesong', 'setsong'])
+    async def setlistening(self, ctx: Context, *, activity):
         if not self.bot.is_admin(ctx.author):
             return
         logger.info(f'Song changed to "{activity}" by {str(ctx.author)}')
         self.bot.state['game'] = None
         self.bot.state['song'] = activity
+        self.bot.state['stream'] = None
         return await self.bot.change_presence(activity=Activity(name=activity, type=ActivityType.listening))
+
+    @command(aliases=['changestream', 'setvideo', 'setstream'])
+    async def setwatching(self, ctx: Context, *, activity):
+        if not self.bot.is_admin(ctx.author):
+            return
+        logger.info(f'Watching changed to "{activity}" by {str(ctx.author)}')
+        self.bot.state['game'] = None
+        self.bot.state['song'] = None
+        self.bot.state['stream'] = activity
+        return await self.bot.change_presence(activity=Activity(name=activity, type=ActivityType.watching))
 
     def add_help_section(self, section_name, command_list, restricted=False):
         """Allows external Cogs to register their own help section"""

@@ -76,6 +76,8 @@ class OBSBot(commands.Bot):
             activity = disnake.Game(game)
         elif song := self.state.get('song', None):
             activity = disnake.Activity(name=song, type=disnake.ActivityType.listening)
+        elif stream := self.state.get('stream', None):
+            activity = disnake.Activity(name=stream, type=disnake.ActivityType.watching)
         else:
             activity = disnake.Activity(name='your problems', type=disnake.ActivityType.listening)
 
