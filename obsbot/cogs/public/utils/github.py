@@ -40,6 +40,9 @@ class GitHubHelper:
         # Ignore temporary branches (e.g. merge queue)
         if branch.startswith('gh-readonly'):
             return embed_commits
+        # Ignore everything but master/release branches for main repo
+        elif project == 'obsproject/obs-studio' and not (branch == 'master' or branch.startswith('release')):
+            return embed_commits
 
         if brief and len(commits) > self.config['commit_truncation_limit']:
             first_hash = commits[0]['id']
