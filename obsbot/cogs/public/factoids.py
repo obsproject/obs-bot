@@ -1,5 +1,9 @@
 import logging
 
+from copy import deepcopy
+from typing import Optional
+
+from disnake.abc import Messageable
 from disnake import Message, Embed, Member, ApplicationCommandInteraction
 from disnake.ext.commands import Cog, command, Context, InvokableSlashCommand
 
@@ -10,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class Factoids(Cog):
     _factoids_colour = 0x36393E
+    _log_colour = 0xFFB400
 
     def __init__(self, bot, config):
         self.bot = bot
@@ -19,6 +24,7 @@ class Factoids(Cog):
         self.limiter = RateLimiter(self.config.get('cooldown', 20.0))
 
         self.initial_commands_sync_done = False
+        self.log_channel: Optional[Messageable] = None
 
         # The variables map to state variables, can be added at runtime
         self.variables = {
@@ -107,6 +113,77 @@ class Factoids(Cog):
             self.bot._schedule_delayed_command_sync()
 
         self.initial_commands_sync_done = True
+
+    async def init_logging(self):
+        if 'log_channel' not in self.config:
+            return
+        await self.bot.wait_until_ready()
+        self.log_channel = self.bot.get_channel(self.config['log_channel'])
+        if self.log_channel:
+            logger.info(f'Found factoid changelog channel: {self.log_channel}')
+
+    async def _log_action(self, actor: Member, new: dict = None, old: dict = None):
+        if not self.log_channel:
+            return
+        if not old and not new:
+            return
+
+        # New factoid created
+        if new and not old:
+            embed = Embed(
+                title=f'Factoid `{new["name"]}` was created',
+                description=f'**User:** {actor.mention}',
+                colour=self._log_colour,
+            )
+            embed.add_field('Message', f'```\n{new["message"]}\n```')
+            return await self.log_channel.send(embed=embed)
+
+        # Factoid deleted
+        if old and not new:
+            embed = Embed(
+                title=f'Factoid `{old["name"]}` was deleted',
+                description=f'**User:** {actor.mention}',
+                colour=self._log_colour,
+            )
+
+            embed.add_field('Message', f'```\n{old["message"]}\n```', inline=False)
+            if old['image_url']:
+                embed.add_field('Image URL', old['image_url'], inline=False)
+            if old['aliases']:
+                embed.add_field(
+                    'Aliases', '`{}`'.format(', '.join(old['aliases']) if old['aliases'] else '<Empty>'), inline=False
+                )
+            embed.add_field('Uses', old['uses'], inline=False)
+            return await self.log_channel.send(embed=embed)
+
+        # Factoid modified
+        embed = Embed(
+            title=f'Factoid `{old["name"]}` was updated',
+            description=f'**User:** {actor.mention}',
+            colour=self._log_colour,
+        )
+
+        if old['message'] != new['message']:
+            embed.add_field('Old message', f'```\n{old["message"]}\n```', inline=False)
+            embed.add_field('New message', f'```\n{new["message"]}\n```', inline=False)
+
+        if old['image_url'] != new['image_url']:
+            embed.add_field('Old Image URL', old['image_url'], inline=False)
+            embed.add_field('New Image URL', new['image_url'], inline=False)
+
+        if old['aliases'] != new['aliases']:
+            embed.add_field(
+                'Old Aliases', '`{}`'.format(', '.join(old['aliases']) if old['aliases'] else '<Empty>'), inline=False
+            )
+            embed.add_field(
+                'New Aliases', '`{}`'.format(', '.join(new['aliases']) if new['aliases'] else '<Empty>'), inline=False
+            )
+
+        # If no loggable changes were made, ignore it
+        if not embed.fields:
+            return
+
+        await self.log_channel.send(embed=embed)
 
     def set_variable(self, variable, value):
         self.variables[variable] = value
@@ -219,7 +296,8 @@ class Factoids(Cog):
             f'''INSERT INTO "{self.config["db_table"]}" (name, message) VALUES ($1, $2)''', name, message
         )
         await self.fetch_factoids(refresh=True)
-        return await ctx.send(f'Factoid "{name}" has been added.')
+        await ctx.send(f'Factoid "{name}" has been added.')
+        await self._log_action(ctx.author, new=self.factoids[name])
 
     @command()
     async def mod(self, ctx: Context, name: str.lower, *, message):
@@ -233,10 +311,12 @@ class Factoids(Cog):
         if self.factoids[_name]['embed'] and message == '""':
             message = ''
 
+        old_factoid = self.factoids[_name].copy()
         await self.bot.db.exec(f'''UPDATE "{self.config["db_table"]}" SET message=$2 WHERE name=$1''', _name, message)
 
         await self.fetch_factoids(refresh=True)
-        return await ctx.send(f'Factoid "{name}" has been updated.')
+        await ctx.send(f'Factoid "{name}" has been updated.')
+        await self._log_action(ctx.author, new=self.factoids[_name], old=old_factoid)
 
     @command(name='del')
     async def _del(self, ctx: Context, name: str.lower):
@@ -247,9 +327,11 @@ class Factoids(Cog):
                 f'The specified factoid name ("{name}") does not exist ' f'(use base name instead of alias)!'
             )
 
+        factoid = self.factoids[name].copy()
         await self.bot.db.exec(f'''DELETE FROM "{self.config["db_table"]}" WHERE name=$1''', name)
         await self.fetch_factoids(refresh=True)
-        return await ctx.send(f'Factoid "{name}" has been deleted.')
+        await ctx.send(f'Factoid "{name}" has been deleted.')
+        await self._log_action(ctx.author, old=factoid)
 
     @command()
     async def ren(self, ctx: Context, name: str.lower, new_name: str.lower):
@@ -260,6 +342,7 @@ class Factoids(Cog):
         if new_name in self.factoids or new_name in self.alias_map:
             return await ctx.send(f'The specified new name ("{name}") already exist as factoid or alias!')
 
+        # ToDo log renaming
         # if name is an alias, rename the alias instead
         if name in self.alias_map:
             real_name = self.alias_map[name]
@@ -291,6 +374,7 @@ class Factoids(Cog):
         if alias in self.alias_map:
             return await ctx.send(f'The specified alias ("{alias}") already exists!')
 
+        old_factoid = deepcopy(self.factoids[_name])
         self.factoids[_name]['aliases'].append(alias)
 
         await self.bot.db.exec(
@@ -300,7 +384,8 @@ class Factoids(Cog):
         )
 
         await self.fetch_factoids(refresh=True)
-        return await ctx.send(f'Alias "{alias}" added to "{name}".')
+        await ctx.send(f'Alias "{alias}" added to "{name}".')
+        await self._log_action(ctx.author, new=self.factoids[_name], old=old_factoid)
 
     @command()
     async def delalias(self, ctx: Context, alias: str.lower):
@@ -310,6 +395,7 @@ class Factoids(Cog):
             return await ctx.send(f'The specified name ("{alias}") does not exist!')
 
         real_name = self.alias_map[alias]
+        old_factoid = deepcopy(self.factoids[real_name])
         # get list of aliases minus the old one, then append the new one
         aliases = [i for i in self.factoids[real_name]['aliases'] if i != alias]
 
@@ -318,7 +404,8 @@ class Factoids(Cog):
         )
 
         await self.fetch_factoids(refresh=True)
-        return await ctx.send(f'Alias "{alias}" for "{real_name}" has been removed.')
+        await ctx.send(f'Alias "{alias}" for "{real_name}" has been removed.')
+        await self._log_action(ctx.author, new=self.factoids[real_name], old=old_factoid)
 
     @command()
     async def setembed(self, ctx: Context, name: str.lower, yesno: bool = None):
@@ -355,10 +442,12 @@ class Factoids(Cog):
         if not factoid['embed']:
             return await ctx.send(f'The specified factoid ("{name}") is not en embed!')
 
+        old_factoid = factoid.copy()
         await self.bot.db.exec(f'''UPDATE "{self.config["db_table"]}" SET image_url=$2 WHERE name=$1''', _name, url)
 
         await self.fetch_factoids(refresh=True)
-        return await ctx.send(f'Image URL for "{name}" set to {url}')
+        await ctx.send(f'Image URL for "{name}" set to {url}')
+        await self._log_action(ctx.author, new=self.factoids[_name], old=old_factoid)
 
     @command()
     async def info(self, ctx: Context, name: str.lower):
@@ -412,5 +501,6 @@ def setup(bot):
         fac = Factoids(bot, bot.config['factoids'])
         bot.add_cog(fac)
         bot.loop.create_task(fac.fetch_factoids())
+        bot.loop.create_task(fac.init_logging())
     else:
         logger.info('Factoids Cog not enabled.')
