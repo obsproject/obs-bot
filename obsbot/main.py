@@ -28,7 +28,7 @@ class OBSBot(commands.Bot):
             voice_states=False,
             message_content=True,
         )
-        super().__init__(command_prefix='.', help_command=None, intents=intents)  # type: ignore
+        super().__init__(command_prefix='.', help_command=None, intents=intents, max_messages=10_000)  # type: ignore
 
         self.config = toml.load(open(config_file))
         self.state = StateFile(self.config['bot']['state_file'])
