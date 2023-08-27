@@ -322,14 +322,10 @@ class GitHubHelper:
             build_result = 'failed'
             message = [f'All jobs failed after {minutes}m{seconds}s']
 
-        if succeeded := [job['name'] for job in jobs if job['conclusion'] == 'success']:
-            message.append('**Succeeded:** {}'.format(', '.join(succeeded)))
-        if skipped := [job['name'] for job in jobs if job['conclusion'] == 'skipped']:
-            message.append('**Skipped:** {}'.format(', '.join(skipped)))
         if skipped := [job['name'] for job in jobs if job['conclusion'] == 'cancelled']:
-            message.append('**Cancelled:** {}'.format(', '.join(skipped)))
+            message.append('\n**Cancelled:**\n- {}'.format('\n- '.join(sorted(skipped))))
         if failed := [job['name'] for job in jobs if job['conclusion'] not in {'success', 'skipped', 'cancelled'}]:
-            message.append('**Failed:** {}'.format(', '.join(failed)))
+            message.append('\n**Failed:**\n- {}'.format('\n- '.join(sorted(failed))))
 
         artifacts = await self.get_with_retry(run['artifacts_url'])
         if not artifacts:
