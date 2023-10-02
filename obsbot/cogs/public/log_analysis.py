@@ -82,7 +82,7 @@ class LogAnalyser(Cog):
         log_candidates = []
         # message attachments
         for attachment in msg.attachments:
-            if attachment.url.endswith('.txt'):
+            if urlparse(attachment.url).path.endswith('.txt'):
                 # collisions are possible here, but unlikely, we'll see if it becomes a problem
                 if not self.limiter.is_limited(attachment.filename):
                     log_candidates.append(attachment.url)
