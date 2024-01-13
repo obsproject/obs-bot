@@ -19,7 +19,12 @@ class DBHelper:
     async def connect(self, config):
         logger.info(f'Connecting to database {config["host"]}:{config["port"]} as "{config["user"]}"...')
         self.conn = await asyncpg.create_pool(
-            host=config['host'], port=config['port'], user=config['user'], password=config['pass'], command_timeout=60
+            host=config['host'],
+            port=config['port'],
+            user=config['user'],
+            password=config['pass'],
+            database=config['database'],
+            command_timeout=60,
         )
 
     async def query(self, query, *args, **kwargs) -> Union[List[asyncpg.Record], None]:
