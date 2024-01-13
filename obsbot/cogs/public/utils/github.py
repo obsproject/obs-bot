@@ -43,6 +43,8 @@ class GitHubHelper:
         # Ignore everything but master/release branches for main repo
         elif project == 'obsproject/obs-studio' and not (branch == 'master' or branch.startswith('release')):
             return embed_commits
+        elif project == 'obsproject/design' and branch != 'main':
+            return embed_commits
 
         if brief and len(commits) > self.config['commit_truncation_limit']:
             first_hash = commits[0]['id']
