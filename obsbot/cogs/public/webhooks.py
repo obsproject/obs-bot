@@ -53,13 +53,13 @@ class Webhooks(Cog):
         if event == 'push':
             messages = []
             # this gets the short and long embeds to send to the respective channels
-            brief = await self.gh_helper.get_commit_messages(body, True)
+            full = await self.gh_helper.get_commit_messages(body)
+            brief = await self.gh_helper.get_brief_commit_messages(body, full)
             for embed, commit_hash in brief:
                 msg = await self.brief_channel.send(embed=embed)
                 if commit_hash:
                     messages.append((msg, commit_hash))
 
-            full = await self.gh_helper.get_commit_messages(body, False)
             for embed, commit_hash in full:
                 msg = await self.commits_channel.send(embed=embed)
                 if commit_hash:
