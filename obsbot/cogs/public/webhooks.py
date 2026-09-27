@@ -6,7 +6,6 @@ from disnake.ext.commands import Cog
 
 from .utils.github import GitHubHelper
 
-
 logger = logging.getLogger(__name__)
 
 _select_query = '''SELECT * FROM "{}" WHERE commit_hash = $1'''

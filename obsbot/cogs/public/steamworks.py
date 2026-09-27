@@ -10,7 +10,6 @@ from disnake.ext.commands import Cog, command
 from disnake.ext.commands.context import Context
 from disnake.ui.action_row import ActionRow
 
-
 logger = logging.getLogger(__name__)
 STEAMWORKS_COLOUR = 0x1B1E22
 STEAMWORKS_API_URL = 'https://partner.steam-api.com'
