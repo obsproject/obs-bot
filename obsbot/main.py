@@ -122,6 +122,8 @@ class OBSBot(commands.Bot):
             return
         elif isinstance(exception, commands.errors.MissingRequiredArgument):
             return
+        elif isinstance(exception, commands.errors.BadArgument):
+            return
         raise exception
 
     async def on_message(self, message):
