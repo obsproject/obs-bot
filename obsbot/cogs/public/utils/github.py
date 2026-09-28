@@ -32,7 +32,7 @@ class GitHubHelper:
         self.user_cache = dict()
         self.user_cache_max_age = 3600 * 24 * 7
 
-    async def get_commit_messages(self, event_body, brief=False):
+    async def get_commit_messages(self, event_body):
         embed_commits = []
         branch = event_body['ref'].split('/', 2)[2]
         project = event_body['repository']['full_name']
@@ -46,18 +46,6 @@ class GitHubHelper:
         elif project == 'obsproject/design' and branch != 'main':
             return embed_commits
 
-        if brief and len(commits) > self.config['commit_truncation_limit']:
-            first_hash = commits[0]['id']
-            last_hash = commits[-2]['id']
-            compare_url = f'https://github.com/{project}/compare/{first_hash}^...{last_hash}'
-            embed = Embed(
-                title=f'Skipped {len(commits) - 1} commits... (click link for diff)',
-                colour=Colour(self._skipped_commit_colour),
-                url=compare_url,
-            )
-            embed_commits.append((embed, None))
-            commits = commits[-1:]
-
         for commit in commits:
             author_username = commit['author'].get('username', None)
             author_name = commit['author'].get('name', None)
@@ -67,7 +55,7 @@ class GitHubHelper:
                 title=commit_message[0], colour=Colour(self._commit_colour), url=commit['url'], timestamp=timestamp
             )
 
-            if len(commit_message) > 2 and not brief:
+            if len(commit_message) > 2:
                 commit_body = '\n'.join(commit_message[2:])
                 embed.description = commit_body[:4096]
 
@@ -89,6 +77,48 @@ class GitHubHelper:
             embed.add_field(name='Repository', value=project, inline=True)
             embed.add_field(name='Branch', value=branch, inline=True)
             embed_commits.append((embed, commit['id']))
+
+        return embed_commits
+
+    async def get_brief_commit_messages(self, event_body, commit_messages):
+        embed_commits = []
+        if len(commit_messages) > self.config['commit_truncation_limit']:
+            branch = event_body['ref'].split('/', 2)[2]
+            project = event_body['repository']['full_name']
+            head_hash = event_body['after']
+            prs = await self.get_with_retry(f'https://api.github.com/repos/{project}/commits/{head_hash}/pulls')
+            for pr in prs or []:
+                if (
+                    pr['merged_at']
+                    and pr['merge_commit_sha'] == head_hash
+                    and pr['base']['ref'] == branch
+                    and pr['base']['repo']['full_name'] == project
+                ):
+                    embed, _ = await self.get_pr_messages(
+                        dict(number=pr['number'], pull_request=pr, repository=event_body['repository'])
+                    )
+                    embed.title = f'Merged {embed.title}'[:256]
+                    embed.colour = Colour(self._commit_colour)
+                    embed.timestamp = dateutil.parser.parse(pr['merged_at'])
+                    embed.set_footer(text='Merged Pull Request')
+                    embed.add_field(name='Branch', value=branch, inline=True)
+                    return [(embed, head_hash)]
+
+            first_hash = commit_messages[0][1]
+            last_hash = commit_messages[-2][1]
+            compare_url = f'https://github.com/{project}/compare/{first_hash}^...{last_hash}'
+            embed = Embed(
+                title=f'Skipped {len(commit_messages) - 1} commits... (click link for diff)',
+                colour=Colour(self._skipped_commit_colour),
+                url=compare_url,
+            )
+            embed_commits.append((embed, None))
+            commit_messages = commit_messages[-1:]
+
+        for embed, commit_hash in commit_messages:
+            embed = embed.copy()
+            embed.description = None
+            embed_commits.append((embed, commit_hash))
 
         return embed_commits
 
