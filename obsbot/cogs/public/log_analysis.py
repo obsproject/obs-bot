@@ -1,6 +1,7 @@
 import logging
 import json
 import random
+import re
 
 from asyncio import TimeoutError
 from urllib.parse import parse_qs, urlparse, quote_plus as urlencode
@@ -177,11 +178,13 @@ class LogAnalyser(Cog):
             if log_analysis['info']:
                 embed.add_field(name="ℹ️ Info", value=pretty_print_messages(log_analysis['info']))
 
-            # do local hardware check/stats collection and include results if enabled
-            hw_results = await self.match_hardware(log_content)
+            # do local hardware check/stats collection and include results if enabled, otherwise just display hardware
             if self.bot.state.get('hw_check_enabled', False):
+                hw_results = await self.match_hardware(log_content)
                 if hardware_check_msg := self.hardware_check(hw_results):
                     embed.add_field(name='Hardware Check', inline=False, value=' / '.join(hardware_check_msg))
+            elif hardware_names := self.get_hardware(log_content.splitlines()):
+                embed.add_field(name='Hardware', inline=False, value=' / '.join(hardware_names))
 
             # include filtered log in case SE or FTL spam is detected
             if 'obsproject.com' in log_url and any(elem in log_content for elem in self._filtered_log_needles):
@@ -228,6 +231,66 @@ class LogAnalyser(Cog):
             else:
                 # Raise if status >= 400
                 r.raise_for_status()
+
+    def get_hardware(self, log_lines):
+        ''' Extracts CPU and GPU name from the log to display in the embed
+        '''
+        cpu_anchors = [
+            "CPU Name: ",               # CPU
+        ]
+        gpu_anchors = [
+            "Adapter 0: ",                      # GPU on DirectX
+            "Loading up OpenGL on adapter ",    # GPU on OpenGL
+        ]
+
+        excise = [                      # We remove those from the name
+            "NVIDIA",
+            "AMD",
+            "Qualcomm",
+            "Oryon",
+            "Intel Mesa",               # From OpenGL
+            "Inc.",
+            "Corporation",
+            "CPU",
+            "GPU",
+            "Processor",
+            "@",
+            r"\(.*?\)",                 # Anything in parentheses, lazy quantifier necessary
+            r"(w/|with).*$",            # AMD CPUs listing iGPU
+            r"(\d|\.)+ ?GHz",           # Clock speed, with a space on Qualcomm, without on Intel
+            r"(\d)+th Gen",             # Intel processor generation
+            "/PCIe/SSE2",               # NVIDIA GPUs on Linux OpenGL
+        ]
+
+        singles = [                     # We ensure those are not twice together
+            "Apple",
+            "Intel",
+        ]
+
+        cpu_catch = fr"({'|'.join(cpu_anchors)})(?P<cpu_string>.*)"
+        gpu_catch = fr"({'|'.join(gpu_anchors)})(?P<gpu_string>.*)"
+        excise_catch = "|".join(excise)
+
+        cpu_string = "Unparseable"      # Placeholders in case no match is found
+        gpu_string = "Unparseable"
+
+        for match in (re.search(cpu_catch, line) for line in log_lines):
+            if match:
+                cpu_string = re.sub(excise_catch, "", match.group("cpu_string"))                # Grab the match and removes the `excise` patterns
+                for pattern in singles:
+                    cpu_string = re.sub(fr"{pattern} +{pattern}", f"{pattern}", cpu_string)     # Removes duplicated `singles` patterns
+                cpu_string = " ".join(re.split(r"[ -]+", cpu_string)).strip()                   # Clean up stray double spaces and dashes
+                break                                                                           # We only need the first positive match so break
+
+        for match in (re.search(gpu_catch, line) for line in log_lines):
+            if match:
+                gpu_string = re.sub(excise_catch, "", match.group("gpu_string"))
+                for pattern in singles:
+                    gpu_string = re.sub(fr"{pattern} +{pattern}", f"{pattern}", gpu_string)
+                gpu_string = " ".join(re.split(r"[ -]+", gpu_string)).strip()
+                break
+
+        return (cpu_string, gpu_string)
 
     def hardware_check(self, hw_results):
         hw_heck_msg = []
