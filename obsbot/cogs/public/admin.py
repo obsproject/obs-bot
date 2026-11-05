@@ -18,6 +18,7 @@ class Admin(Cog):
                 ('.status', 'prints the bot\'s current status'),
                 ('.setgame', 'Set the bot\'s "Playing ..." status'),
                 ('.setsong', 'Set the bot\'s "Listening to ..." status'),
+                ('.slow', 'Set the current channel\'s Slowmode setting (0-21600 seconds)'),
             ]
         }
         self.restricted = set()
@@ -136,6 +137,26 @@ class Admin(Cog):
         self.help_sections[section_name] = command_list
         if restricted:
             self.restricted.add(section_name)
+
+    @command()
+    async def slow(self, ctx: Context, seconds: int = 0):
+        if not self.bot.is_admin(ctx.author):
+            return
+
+        # Clamp to the min value of 0 seconds (disabled, no delay)
+        if seconds < 0:
+            seconds = 0
+
+        # Clamp to the max value of 21600 seconds (6 hours)
+        if seconds > 21600:
+            seconds = 21600
+
+        if seconds == 0:
+            await ctx.send('Slowmode has been disabled in this channel.')
+        elif seconds > 0:
+            await ctx.send(f'Slowmode has been enabled in this channel with a {seconds} second delay.')
+
+        await ctx.channel.edit(slowmode_delay=seconds)
 
 
 def setup(bot):
