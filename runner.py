@@ -30,6 +30,9 @@ def setup_logging(logfile=None, debug=False):
             handler.setFormatter(fmt)
             log.addHandler(handler)
         else:
+            logging.addLevelName(logging.DEBUG, '\x1b[36;20mDEBUG\x1b[0m')
+            logging.addLevelName(logging.ERROR, '\x1b[31;20mERROR\x1b[0m')
+            logging.addLevelName(logging.WARNING, '\x1b[33;20mWARNING\x1b[0m')
             logger.warning('Logging to file is disabled')
 
         yield
