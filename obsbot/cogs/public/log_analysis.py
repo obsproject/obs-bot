@@ -176,6 +176,8 @@ class LogAnalyser(Cog):
                 embed.add_field(name="⚠️ Warning", value=pretty_print_messages(log_analysis['warning']))
             if log_analysis['info']:
                 embed.add_field(name="ℹ️ Info", value=pretty_print_messages(log_analysis['info']))
+            if log_analysis.get('system'):
+                embed.add_field(name="🖥️ System", value=pretty_print_messages(log_analysis['system']))
 
             # do local hardware check/stats collection and include results if enabled
             hw_results = await self.match_hardware(log_content)
